@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "night-games", "runtimeExecutable": "python3", "runtimeArgs": ["build.py", "--serve"], "port": 8000 }
+  ]
+}

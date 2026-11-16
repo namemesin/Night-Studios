@@ -1,4 +1,4 @@
-name: Publish Night Run
+name: Publish Night Games
 
 on:
   push:
@@ -29,7 +29,6 @@ jobs:
           python3 build.py
           cp -R night-run-app site
           test -f site/index.html
-          sed -i 's#https://night-run-drop-in.netlify.app/#https://namemesin.github.io/night-run/#g' site/index.html
       - name: Set the version number
         id: version
         run: |

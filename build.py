@@ -62,7 +62,7 @@ def serve():
     build()
     handler = partial(DevHandler, directory=str(APP))
     with http.server.ThreadingHTTPServer(('127.0.0.1', PORT), handler) as server:
-        print(f'Night Run is at http://localhost:{PORT} (press Ctrl+C to stop)')
+        print(f'Night Games is at http://localhost:{PORT} (press Ctrl+C to stop). Add ?offline to test without the server.')
         try:
             server.serve_forever()
         except KeyboardInterrupt:
