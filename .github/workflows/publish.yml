@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write # to save each published version number as a tag
+  contents: write # to post each published version as a release
   pages: write
   id-token: write
 
@@ -33,7 +33,7 @@ jobs:
         id: version
         run: |
           # The first number is in VERSION_MAJOR. The second goes up once per push that changes the game.
-          # Each published version is saved as a tag, like v2.1, which is how the next publish knows where to continue.
+          # Each published version is posted as a release tagged like v3.1, which is how the next publish knows where to continue.
           major="$(tr -d '[:space:]' < VERSION_MAJOR)"
           latest="$(git tag --list "v$major.*" --sort=-v:refname | head -n 1)"
           if [ -z "$latest" ]; then
@@ -57,10 +57,16 @@ jobs:
           path: site
       - id: deployment
         uses: actions/deploy-pages@v4
-      - name: Save the version number
-        if: steps.version.outputs.new == 'true'
+      - name: Post the release
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git tag "v$VERSION"
-          git push origin "v$VERSION"
+          # Every published version gets a GitHub release. The release carries the version's tag,
+          # which is how the next publish knows which number comes next.
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "Release v$VERSION is already posted"
+          else
+            gh release create "v$VERSION" --target "$GITHUB_SHA" --title "Night Games $VERSION" --notes "Play it: $PAGE_URL" --generate-notes
+          fi
