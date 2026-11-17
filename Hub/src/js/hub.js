@@ -27,18 +27,19 @@
   // Someone who logged in to Night Run before the studio login existed stays logged in.
   if (acct === undefined) { const old = (readJSON('nightgames-save1') || {}).acct; if (old && typeof old.token === 'string') { setStudioAcct(old); acct = studioAcct(); } }
 
+  let versions = {};
   const GAMES = [
-    { href: 'run/', cls: '', name: 'Night Run', desc: 'Snowboard a midnight mountain. Spin off kickers, grind rails and skim the trees to build a multiplier.',
+    { id: 'run', href: 'run/', cls: '', name: 'Night Run', desc: 'Snowboard a midnight mountain. Spin off kickers, grind rails and skim the trees to build a multiplier.',
       meta: () => { const r = ((readJSON('nightgames-save1') || {}).games || {}).run || {}; return [r.best ? 'Your best ' + fmt(r.best) : 'Not played yet', 'Free Ride · Daily Course · Trick Park']; } },
-    { href: 'watch/', cls: ' watch', name: 'Night Watch', desc: 'Keep the campfire alive until sunrise. Build lanterns, brambles, flares and beacons to hold back the shades.',
+    { id: 'watch', href: 'watch/', cls: ' watch', name: 'Night Watch', desc: 'Keep the campfire alive until sunrise. Build lanterns, brambles, flares and beacons to hold back the shades.',
       meta: () => { const d = (readJSON('nightwatch-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'Keep Watch · Daily Watch']; } },
-    { href: 'heist/', cls: ' heist', name: 'Night Heist', desc: 'Slip past the guards and searchlights, take the vault piece and get out. Every floor is tighter than the last.',
+    { id: 'heist', href: 'heist/', cls: ' heist', name: 'Night Heist', desc: 'Slip past the guards and searchlights, take the vault piece and get out. Every floor is tighter than the last.',
       meta: () => { const d = (readJSON('nightheist-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'The Job · Daily Job']; } },
   ];
   function render() {
     const keep = document.activeElement && document.activeElement.id === 'uname' ? $('uname').value : null;
     $('whoChip').textContent = acct ? acct.username : 'Guest';
-    const cards = GAMES.map(g => `<a class="game live${g.cls}" href="${g.href}"><span class="tag">PLAY NOW</span><h3>${g.name}</h3><p>${g.desc}</p><div class="meta">${g.meta().map(m => `<span>${esc(m)}</span>`).join('')}</div></a>`).join('');
+    const cards = GAMES.map(g => `<a class="game live${g.cls}" href="${g.href}"><span class="tag">PLAY NOW${versions[g.id] && versions[g.id] !== 'dev' ? ' · VERSION ' + esc(versions[g.id]) : ''}</span><h3>${g.name}</h3><p>${g.desc}</p><div class="meta">${g.meta().map(m => `<span>${esc(m)}</span>`).join('')}</div></a>`).join('');
     let login;
     if (!serverUp) login = `<div class="box"><h3>Login</h3><p>Logins aren't available right now. You can still play; progress saves on this device.</p></div>`;
     else if (acct) login = `<div class="box"><div class="who"><div><h3 style="margin:0">${esc(acct.username)}</h3><p class="sub">Signed in to Night Studios. Every game uses this login and saves its own progress to it.</p></div><button class="buy ghost" type="button" id="outBtn" ${busy ? 'disabled' : ''}>Log out</button></div></div>`;
@@ -72,4 +73,5 @@
   addEventListener('storage', e => { if (e.key === STUDIO_KEY) { acct = studioAcct(); render(); } });
   addEventListener('pageshow', () => { acct = studioAcct(); render(); });
   render();
+  fetch('versions.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).then(v => { if (v && typeof v === 'object') { versions = v; render(); } }).catch(() => {});
   if (sbReady && acct) rpc('ng_me', { p_token: acct.token }).then(me => { if (me && me.error) { setStudioAcct(null); acct = null; err = 'Your login expired. Log in again.'; render(); } }).catch(ex => { if (ex.status === 404) { serverUp = false; render(); } });

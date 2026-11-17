@@ -23,49 +23,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # the version number comes from the tags and history
-      - name: Build the site
+          fetch-depth: 0 # each app's version number comes from the tags and history
+      - name: Build the site and set each version
         run: |
-          python3 build.py
-          for page in site/index.html site/run/index.html site/watch/index.html site/heist/index.html; do test -f "$page"; done
-      - name: Set the version number
-        id: version
-        run: |
-          # The first number is in VERSION_MAJOR. The second goes up once per push that changes the game.
-          # Each published version is posted as a release tagged like v3.1, which is how the next publish knows where to continue.
-          major="$(tr -d '[:space:]' < VERSION_MAJOR)"
-          latest="$(git tag --list "v$major.*" --sort=-v:refname | head -n 1)"
-          if [ -z "$latest" ]; then
-            version="$major.0"; new=true
-          elif git diff --quiet "$latest" HEAD -- . ':!README.md' ':!.github' ':!backend'; then
-            version="${latest#v}"; new=false
-          else
-            version="$major.$(( ${latest##*.} + 1 ))"; new=true
-          fi
-          sed -i -E "s/(APP_VERSION = ')[^']*'/\1$version'/" site/index.html site/run/index.html site/watch/index.html site/heist/index.html
-          sed -i -E "s/(const CACHE = 'night-studios-)[^']*'/\1$version'/" site/sw.js
-          printf '{"version": "%s"}\n' "$version" > site/version.json
-          for page in site/index.html site/run/index.html site/watch/index.html site/heist/index.html; do grep -q "APP_VERSION = '$version'" "$page"; done
-          grep -q "const CACHE = 'night-studios-$version'" site/sw.js
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "new=$new" >> "$GITHUB_OUTPUT"
-          echo "Publishing version $version"
+          # The home page and every game have their own version. build.py explains how the numbers work:
+          # the VERSION file in each app's folder, plus a count of publishes that changed that app.
+          python3 build.py --release
+          for page in site/index.html site/run/index.html site/watch/index.html site/heist/index.html; do
+            test -f "$page"
+            ! grep -q "APP_VERSION = 'dev'" "$page"
+          done
+          ! grep -q "night-studios-dev" site/sw.js
+          cat site/versions.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site
       - id: deployment
         uses: actions/deploy-pages@v4
-      - name: Post the release
+      - name: Post the releases
         env:
-          VERSION: ${{ steps.version.outputs.version }}
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Every published version gets a GitHub release. The release carries the version's tag,
-          # which is how the next publish knows which number comes next.
-          if gh release view "v$VERSION" >/dev/null 2>&1; then
-            echo "Release v$VERSION is already posted"
-          else
-            gh release create "v$VERSION" --target "$GITHUB_SHA" --title "Night Studios $VERSION" --notes "Play it: $PAGE_URL" --generate-notes
-          fi
+          # One release for each app whose version is new, tagged like run-v1.0.2.
+          # The tag is how the next publish knows which number comes next.
+          while IFS=$'\t' read -r tag title path; do
+            [ -n "$tag" ] || continue
+            if gh release view "$tag" >/dev/null 2>&1; then
+              echo "$title is already posted"
+            else
+              gh release create "$tag" --target "$GITHUB_SHA" --title "$title" --notes "Play it: ${PAGE_URL}${path}" --generate-notes
+            fi
+          done < .release

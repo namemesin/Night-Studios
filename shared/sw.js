@@ -18,7 +18,7 @@ self.addEventListener('fetch', e => {
   const sameSite = url.origin === self.location.origin;
   const font = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
   if (!sameSite && !font) return; // logins, saves and leaderboards go straight to the network
-  if (sameSite && url.pathname.endsWith('/version.json')) return;
+  if (sameSite && url.pathname.endsWith('/versions.json')) return;
 
   if (font) { // fonts never change: cache first
     e.respondWith(caches.open(CACHE).then(async c => (await c.match(req)) || fetch(req).then(res => { c.put(req, res.clone()); return res; })));
