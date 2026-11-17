@@ -232,7 +232,7 @@
   let acc = 0, lastFrame = 0, frameNo = 0;
   function startRun(mode) {
     if (['free', 'daily', 'rush'].includes(mode)) D.mode = mode; else mode = D.mode;
-    initAudio(); newGame(mode);
+    initAudio(); newGame(mode); armRun(mode);
     gstate = 'run'; overlay.hidden = true; pauseBtn.hidden = false; nitroBtn.hidden = true; $('top').hidden = true; resize();
     G.banner = G.rush ? 0 : 130;
     if (G.rush) say('RUSH HOUR · 90 SECONDS · EVERY CAR IS A CHANCE', '#ffd24a', 170); else if (mode === 'daily') say(`DAILY ROUTE · ${dayLabel.toUpperCase()}`, '#ff3dcb', 140);
@@ -259,7 +259,7 @@
     if (mode === 'daily' && D.dlast !== dayKey) { D.dlast = dayKey; L.dailyDays++; }
     for (const x of missionTick(S, true)) G.newMis.push(x);
     for (const x of checkAch(S)) G.newAch.push(x);
-    const pay = earn(Math.round((S.coins + s / 300) * (1 + .1 * up('lucky')))), xp = Math.round(m / 12 + s / 80), lv = addXP(xp);
+    const pay = earn(Math.round((S.coins + s / 300) * (1 + .1 * up('lucky')) * Studio.eventMult('coins'))), xp = Math.round((m / 12 + s / 80) * Studio.eventMult('xp')), lv = addXP(xp);
     for (const x of checkAch(S)) G.newAch.push(x);
     if (!G.rush) { D.top.push({ s, d: m, z: G.zone, m: mode }); D.top.sort((a, b) => b.s - a.s); D.top = D.top.slice(0, 8); }
     const title = isBest ? (G.rush ? 'New Rush Hour record!' : 'New best!') : G.rush ? 'Rush Hour over' : 'Dawn caught you';

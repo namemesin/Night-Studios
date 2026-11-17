@@ -33,12 +33,14 @@ KIT = ROOT / 'kit'
 PORT = 8000
 # id: used in version tags. path: address on the site. folder: where its source lives.
 # styles: the folder whose styles.css it uses. kit: built on the shared kit?
-# Night Drive is hidden for now: its folder is kept, but it is not built into the site.
+# Every game is always built. Taking a game down is the owner's switch in the admin panel, not a change here.
 APPS = [
     dict(id='hub', name='Night Studios', path='', folder='Hub', styles='Night Run', kit=False),
     dict(id='run', name='Night Run', path='run', folder='Night Run', styles='Night Run', kit=False),
     dict(id='watch', name='Night Watch', path='watch', folder='Night Watch', styles='Night Run', kit=True),
     dict(id='heist', name='Night Heist', path='heist', folder='Night Heist', styles='Night Run', kit=True),
+    dict(id='keep', name='Night Keep', path='keep', folder='Night Keep', styles='Night Run', kit=True),
+    dict(id='drive', name='Night Drive', path='drive', folder='Night Drive', styles='Night Drive', kit=False),
 ]
 
 

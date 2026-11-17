@@ -2,8 +2,7 @@
   // Online setup: the Night Studios Supabase project. Logins are shared with the studio's other games; progress,
   // currency and leaderboards are this game's own. Leave these empty to keep everything on the device.
   // Never paste the secret (service_role) key here.
-  const SUPABASE_URL = 'https://bpspwjzxglazmonacbtr.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_PCt45qNSdR6dPRehXvr4KQ_YeLWpE9Q';
+  const SUPABASE_URL = Studio.url, SUPABASE_KEY = Studio.key; // the server address lives in one place: shared/studio.js
   const APP_VERSION = 'dev'; // the publish step replaces this with the real version number
   const DEV = APP_VERSION.startsWith('dev');
   const OFFLINE = /[?&]offline\b/.test(location.search); // local testing without touching the server
@@ -65,7 +64,7 @@
   const int = v => Math.max(0, Math.floor(+v || 0));
   const strList = v => Array.isArray(v) ? [...new Set(v.filter(x => typeof x === 'string' && x.length < 40))] : [];
   const freshSave = () => ({ v: 1, name: '', dev: 'd' + Array.from({ length: 15 }, () => Math.floor(Math.random() * 36).toString(36)).join(''),
-    settings: defSettings(), earned: 0, spent: 0, xp: 0, acct: null, d: {} });
+    settings: defSettings(), earned: 0, spent: 0, xp: 0, gift: 0, acct: null, d: {} });
   let save = freshSave();
   function loadSave(raw) {
     const s = freshSave();
@@ -78,7 +77,7 @@
     if (st.fx === 'low') d.fx = 'low';
     if (st.steer === 'sides') d.steer = 'sides';
     if (st.keys && typeof st.keys === 'object') for (const [a] of KEY_ACTIONS) if (Array.isArray(st.keys[a])) d.keys[a] = [0, 1].map(i => typeof st.keys[a][i] === 'string' ? st.keys[a][i].slice(0, 24) : '');
-    s.earned = int(raw.earned); s.spent = Math.min(int(raw.spent), s.earned); s.xp = int(raw.xp);
+    s.earned = int(raw.earned); s.spent = Math.min(int(raw.spent), s.earned); s.xp = int(raw.xp); s.gift = int(raw.gift);
     if (raw.acct && typeof raw.acct === 'object' && typeof raw.acct.token === 'string') s.acct = { id: String(raw.acct.id || ''), username: String(raw.acct.username || ''), token: raw.acct.token, admin: !!raw.acct.admin, rev: raw.acct.rev == null ? null : +raw.acct.rev };
     s.d = raw.d && typeof raw.d === 'object' ? raw.d : {};
     return s;

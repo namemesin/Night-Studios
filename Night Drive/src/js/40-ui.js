@@ -22,7 +22,7 @@
       ${typeof onlineNotes === 'function' ? onlineNotes() : ''}
       ${btn('free')}<div class="row2">${btn('daily')}${btn('rush')}</div>
       <div class="nav"><button type="button" data-act="go:garage">Garage<b>${cosCount('car')}/${CARS.length} cars</b></button><button type="button" data-act="go:shop">Upgrades<b>${UPG.reduce((n, u) => n + up(u.id), 0)}/${UPG.reduce((n, u) => n + u.cost.length, 0)}</b></button><button type="button" data-act="go:ach">Trophies<b>${achCount()}/${ACH.length}</b></button>
-        <button type="button" data-act="go:board">Leaderboard<b>${typeof boardHint === 'function' ? boardHint() : 'Your best'}</b></button><button type="button" data-act="go:help">How to play<b>Tips</b></button><button type="button" data-act="go:profile">Profile<b>${esc(playerName())}</b></button></div>
+        <button type="button" data-act="go:board">Leaderboard<b>${typeof boardHint === 'function' ? boardHint() : 'Your best'}</b></button><button type="button" data-act="go:help">How to play<b>Tips</b></button><button type="button" data-act="go:profile">Profile<b>${esc(playerName())}</b></button>${Studio.admin ? `<button type="button" data-act="studioadmin">Admin<b>${Studio.owner ? 'Owner tools' : 'Commands &amp; data'}</b></button>` : ''}</div>
       ${missionsHTML()}${nextAchHTML()}
       ${IS_IOS && TOP_LEVEL && !STANDALONE ? `<p class="sub">Play it like an app: tap Share in Safari, then <b>Add to Home Screen</b>.</p>` : ''}${saveBroken ? `<p class="err">This browser is blocking storage, so progress won't be kept.</p>` : ''}
       <p class="ver">Night Drive · a Night Studios game · version ${esc(APP_VERSION)}</p>`;
@@ -134,3 +134,5 @@
     const v = clamp(Math.round(+e.target.value || 0), 0, 100); save.settings[id === 'volMusic' ? 'music' : 'sfx'] = v; $(id + 'Out').textContent = v ? v + '%' : 'Off'; applyVolumes(); saveLocal();
   });
   panel.addEventListener('change', e => { if (e.target.id === 'volSfx') { initAudio(); applyVolumes(); chime([880, 1320]); } });
+  ACTIONS.studioadmin = () => Studio.openAdmin(GAME);
+  Studio.onChange(() => { if (!overlay.hidden && view === 'home') render(); });

@@ -29,8 +29,8 @@ jobs:
           # The home page and every game have their own version. build.py explains how the numbers work:
           # the VERSION file in each app's folder, plus a count of publishes that changed that app.
           python3 build.py --release
-          for page in site/index.html site/run/index.html site/watch/index.html site/heist/index.html; do
-            test -f "$page"
+          test -f site/index.html && test -f site/studio.js
+          for page in $(find site -name index.html); do
             ! grep -q "APP_VERSION = 'dev'" "$page"
           done
           ! grep -q "night-studios-dev" site/sw.js

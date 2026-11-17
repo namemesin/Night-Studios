@@ -155,7 +155,7 @@
   let acc = 0, lastFrame = 0, frameNo = 0;
   function startRun(mode) {
     if (GAME.modes.some(m => m.id === mode)) D.mode = mode; else mode = D.mode;
-    initAudio(); newGame(mode); gstate = 'run'; overlay.hidden = true; pauseBtn.hidden = false; $('top').hidden = true; resize();
+    initAudio(); newGame(mode); armRun(mode); gstate = 'run'; overlay.hidden = true; pauseBtn.hidden = false; $('top').hidden = true; resize();
     say(mode === 'daily' ? `DAILY WATCH · ${dayLabel.toUpperCase()}` : 'THE FIRST SHADES ARE COMING · BUILD NOW', '#ffb347', 200);
     chime([392, 523]); music.intensity = 0; music.tense = false; musicStart(); acc = 0; lastFrame = performance.now();
   }

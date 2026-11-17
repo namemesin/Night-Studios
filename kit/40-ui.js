@@ -26,7 +26,7 @@
         <p class="sub">Level ${lv}${lv < MAX_LEVEL ? ` · ${fmt(save.xp - XP_AT[lv])} / ${fmt(XP_AT[lv + 1] - XP_AT[lv])} XP` : ' · max'}</p>${progBar(levelFrac(), 'gold')}</div></div>
       ${onlineNotes()}${btn(first)}${rest.length ? `<div class="${rest.length > 1 ? 'row2' : ''}">${rest.map(btn).join('')}</div>` : ''}
       <div class="nav"><button type="button" data-act="go:locker">Locker<b>${Object.keys(COS).reduce((n, k) => n + cosCount(k), 0)} items</b></button><button type="button" data-act="go:shop">Upgrades<b>${UPG.reduce((n, u) => n + up(u.id), 0)}/${UPG.reduce((n, u) => n + u.cost.length, 0)}</b></button><button type="button" data-act="go:ach">Trophies<b>${achCount()}/${ACH.length}</b></button>
-        <button type="button" data-act="go:board">Leaderboard<b>${boardHint()}</b></button><button type="button" data-act="go:help">How to play<b>Tips</b></button><button type="button" data-act="go:profile">Profile<b>${esc(playerName())}</b></button></div>
+        <button type="button" data-act="go:board">Leaderboard<b>${boardHint()}</b></button><button type="button" data-act="go:help">How to play<b>Tips</b></button><button type="button" data-act="go:profile">Profile<b>${esc(playerName())}</b></button>${Studio.admin ? `<button type="button" data-act="studioadmin">Admin<b>${Studio.owner ? 'Owner tools' : 'Commands &amp; data'}</b></button>` : ''}</div>
       ${missionsHTML()}${nextAchHTML()}
       ${IS_IOS && TOP_LEVEL && !STANDALONE ? `<p class="sub">Play it like an app: tap Share in Safari, then <b>Add to Home Screen</b>.</p>` : ''}${saveBroken ? `<p class="err">This browser is blocking storage, so progress won't be kept.</p>` : ''}
       <p class="ver">${GAME.name} · a Night Studios game · version ${esc(APP_VERSION)}</p>`;
@@ -141,3 +141,5 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) { if (gstate === 'run') pauseRun(); saveLocal(); } });
   dayHooks.push(() => { missionsDay = ''; if (!overlay.hidden && view === 'home') render(); });
   setInterval(() => { if (gstate === 'idle' || gstate === 'over') rollDay(); }, 60000);
+  ACTIONS.studioadmin = () => Studio.openAdmin(GAME.id);
+  Studio.onChange(() => { if (!overlay.hidden && view === 'home') render(); });

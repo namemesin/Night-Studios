@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Built from the Hub/src folder by build.py. Edit the files there, not this one. -->
-<html lang="en">
+<html lang="en" data-game="">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -35,6 +35,12 @@ a.game:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
 .game.watch{background:linear-gradient(135deg,#3a2110,#170e08);border-color:#8a5a2a}
 .game.watch::after{background:radial-gradient(circle at 85% 0,rgba(255,179,71,.3),transparent 55%),radial-gradient(circle at 55% 10%,rgba(255,107,61,.18),transparent 50%)}
 .game.watch .tag{color:#ffb347}
+.game.drive{background:linear-gradient(135deg,#2a1247,#120a26);border-color:#6a2f9c}
+.game.drive::after{background:radial-gradient(circle at 85% 0,rgba(61,245,255,.22),transparent 55%),radial-gradient(circle at 55% 10%,rgba(255,61,203,.2),transparent 50%)}
+.game.drive .tag{color:#3df5ff}
+.game.keep{background:linear-gradient(135deg,#2a1f4a,#120f1c);border-color:#6a55a8}
+.game.keep::after{background:radial-gradient(circle at 85% 0,rgba(180,140,255,.28),transparent 55%),radial-gradient(circle at 55% 10%,rgba(111,211,255,.16),transparent 50%)}
+.game.keep .tag{color:#b48cff}
 .game.heist{background:linear-gradient(135deg,#10303a,#0a1418);border-color:#2f6b7a}
 .game.heist::after{background:radial-gradient(circle at 85% 0,rgba(92,242,176,.22),transparent 55%),radial-gradient(circle at 55% 10%,rgba(74,163,255,.18),transparent 50%)}
 .game.heist .tag{color:#5cf2b0}
@@ -50,6 +56,7 @@ a.game:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
   </header>
   <main><div class="panel" id="panel"></div></main>
 </div>
+<script src="studio.js"></script>
 <script>
 (() => {
   'use strict';

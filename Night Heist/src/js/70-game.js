@@ -29,7 +29,7 @@
       const L = { w: new Uint8Array(COLS * ROWS), loot: [], guards: [], lights: [], start: [COLS / 2, ROWS - 1.5], exit: [4 + Math.floor(rand() * 2), 1] };
       for (let c = 0; c < COLS; c++) { L.w[c] = L.w[(ROWS - 1) * COLS + c] = 1; } for (let r = 0; r < ROWS; r++) { L.w[r * COLS] = L.w[r * COLS + COLS - 1] = 1; }
       const sc = Math.floor(L.start[0]), sr = Math.floor(L.start[1]);
-      for (let i = 0, k = 9 + Math.min(7, n); i < k; i++) { // wall runs, kept away from the start and the exit
+      for (let i = 0, k = 8 + Math.min(5, Math.floor(n / 2)); i < k; i++) { // wall runs, kept away from the start and the exit
         const horiz = rand() < .5, len = 2 + Math.floor(rand() * 3), c0 = 1 + Math.floor(rand() * (COLS - 2)), r0 = 2 + Math.floor(rand() * (ROWS - 5));
         for (let j = 0; j < len; j++) { const c = c0 + (horiz ? j : 0), r = r0 + (horiz ? 0 : j); if (c < 1 || c > COLS - 2 || r < 2 || r > ROWS - 3) continue; if (Math.abs(c - sc) < 2 && r > ROWS - 4) continue; if (Math.abs(c - L.exit[0]) < 2 && r < 3) continue; L.w[r * COLS + c] = 1; }
       }
@@ -40,20 +40,20 @@
       const used = [L.exit[0] + L.exit[1] * COLS];
       const vault = pick(9, used); if (vault < 0) continue; used.push(vault); L.loot.push({ k: 'vault', x: vault % COLS + .5, y: Math.floor(vault / COLS) + .5 });
       for (let i = 0, k = Math.min(7, 3 + Math.floor(n / 2)); i < k; i++) { const p = pick(3, used); if (p >= 0) { used.push(p); L.loot.push({ k: rand() < .3 ? 'gem' : 'coin', x: p % COLS + .5, y: Math.floor(p / COLS) + .5 }); } }
-      if (rand() < .3) { const p = pick(5, used); if (p >= 0) { used.push(p); L.loot.push({ k: 'smoke', x: p % COLS + .5, y: Math.floor(p / COLS) + .5 }); } }
+      if (rand() < (n >= 3 ? .6 : .35)) { const p = pick(5, used); if (p >= 0) { used.push(p); L.loot.push({ k: 'smoke', x: p % COLS + .5, y: Math.floor(p / COLS) + .5 }); } }
       let ok = true;
-      for (let i = 0, k = Math.min(5, 1 + Math.floor(n * .6)), att = 0; i < k && ok && att < 40; i++, att++) { // guards walk a loop between two or three far-apart spots
+      for (let i = 0, k = Math.min(4, 1 + Math.floor(n / 3)), att = 0; i < k && ok && att < 40; i++, att++) { // guards walk a loop between two or three far-apart spots
         const a = pick(6, []), pts = [a]; if (a < 0) { ok = false; break; }
         const da = flood(L, a % COLS, Math.floor(a / COLS));
         for (let j = 0; j < 2; j++) { let b = -1; for (let t = 0; t < 40 && b < 0; t++) { const p = open[Math.floor(rand() * open.length)]; if (da[p] >= 4 && d[p] >= 5 && !pts.includes(p)) b = p; } if (b >= 0) pts.push(b); }
         if (pts.length < 2) { ok = false; break; }
         let route = []; for (let j = 0; j < pts.length; j++) { const seg = pathTo(L, pts[j], pts[(j + 1) % pts.length]); if (!seg) { ok = false; break; } route = route.concat(seg); }
         if (ok && route.some(p => Math.hypot(p[0] - L.start[0], p[1] - L.start[1]) < 2.8)) { i--; continue; } // nobody patrols right past where you come in
-        if (ok && route.length > 3) L.guards.push({ x: a % COLS + .5, y: Math.floor(a / COLS) + .5, route, i: 0, ang: rand() * TAU, wait: 0, sees: false, spd: .021 + Math.min(.014, n * .0012) });
+        if (ok && route.length > 3) L.guards.push({ x: a % COLS + .5, y: Math.floor(a / COLS) + .5, route, i: 0, ang: rand() * TAU, wait: 0, sees: false, spd: .017 + Math.min(.014, n * .001) });
       }
       if (!ok || !L.guards.length) continue;
-      for (let i = 0, k = Math.min(3, Math.floor((n - 1) / 2)); i < k; i++) { // searchlights sweep a straight open stretch
-        for (let t = 0; t < 30; t++) { const r = 2 + Math.floor(rand() * (ROWS - 5)), c0 = 1 + Math.floor(rand() * 4); let c1 = c0; while (c1 < COLS - 2 && !wallAt(L, c1 + 1, r)) c1++; if (!wallAt(L, c0, r) && c1 - c0 >= 3 && d[c0 + r * COLS] >= 4) { L.lights.push({ x0: c0 + .5, x1: c1 + .5, y: r + .5, t: rand() * TAU, spd: .012 + rand() * .008, x: c0 + .5 }); break; } }
+      for (let i = 0, k = Math.min(2, Math.floor((n - 1) / 4)); i < k; i++) { // searchlights sweep a straight open stretch, never by the entrance or the exit
+        for (let t = 0; t < 30; t++) { const r = 4 + Math.floor(rand() * (ROWS - 8)), c0 = 1 + Math.floor(rand() * 4); let c1 = c0; while (c1 < COLS - 2 && !wallAt(L, c1 + 1, r)) c1++; if (!wallAt(L, c0, r) && c1 - c0 >= 3 && d[c0 + r * COLS] >= 4) { L.lights.push({ x0: c0 + .5, x1: c1 + .5, y: r + .5, t: rand() * TAU, spd: .012 + rand() * .008, x: c0 + .5 }); break; } }
       }
       return L;
     }
@@ -64,11 +64,11 @@
   }
   // Can a point be seen from another, with walls in the way?
   function clear(L, x0, y0, x1, y1) { const d = Math.hypot(x1 - x0, y1 - y0), n = Math.ceil(d / .2); for (let i = 1; i < n; i++) { const t = i / n; if (wallAt(L, Math.floor(x0 + (x1 - x0) * t), Math.floor(y0 + (y1 - y0) * t))) return false; } return true; }
-  const VR = 3.3, VA = .56; // how far and how wide a guard sees
+  const VR = 3, VA = .5; // how far and how wide a guard sees
 
   function newGame(mode, demo) {
     rollDay();
-    G = { mode, demo: !!demo, rand: mode === 'daily' ? seeded('nightheist-' + dayKey) : Math.random, t: 0, score: 0, floor: 0, smoke: 1 + up('smoke'), smokeT: 0, alarm: 0, st: blankStats(), floats: [], toasts: [], flash: 0, shake: 0, by: '', seenThis: false, newAch: [], newMis: [], hint: 0 };
+    G = { mode, demo: !!demo, rand: mode === 'daily' ? seeded('nightheist-' + dayKey) : Math.random, t: 0, score: 0, floor: 0, smoke: 2 + up('smoke'), smokeT: 0, alarm: 0, st: blankStats(), floats: [], toasts: [], flash: 0, shake: 0, by: '', seenThis: false, newAch: [], newMis: [], hint: 0 };
     pn = 0; nextFloor(); return G;
   }
   function nextFloor() {
@@ -107,15 +107,15 @@
       const d = Math.hypot(G.x - g.x, G.y - g.y), a = Math.atan2(G.y - g.y, G.x - g.x);
       let da = a - g.ang; da = Math.atan2(Math.sin(da), Math.cos(da));
       g.sees = !hidden && d < VR && Math.abs(da) < VA && clear(L, g.x, g.y, G.x, G.y);
-      if (g.sees) { seen = 'guard'; G.alarm += (2.3 * (1.5 - d / VR)) * (1 - .08 * up('cloak')); g.ang += da * .08; }
+      if (g.sees) { seen = 'guard'; G.alarm += (1.6 * (1.5 - d / VR)) * (1 - .08 * up('cloak')); g.ang += da * .08; }
       else if (g.wait > 0) { g.wait--; g.ang += Math.sin(g.wait / 9) * .03; }
       else { const p = g.route[g.i], gx = p[0] - g.x, gy = p[1] - g.y, gd = Math.hypot(gx, gy); if (gd < g.spd) { g.x = p[0]; g.y = p[1]; g.i = (g.i + 1) % g.route.length; if (G.rand === Math.random ? Math.random() < .12 : (g.i % 7 === 0)) g.wait = 50; } else { g.x += gx / gd * g.spd; g.y += gy / gd * g.spd; let t = Math.atan2(gy, gx) - g.ang; t = Math.atan2(Math.sin(t), Math.cos(t)); g.ang += t * .14; } }
-      if (!hidden && d < .55) { G.alarm = 100; seen = 'guard'; }
+      if (!hidden && d < .45) { G.alarm = 100; seen = 'guard'; }
     }
-    for (const s of L.lights) { s.t += s.spd; s.x = s.x0 + (s.x1 - s.x0) * (.5 - .5 * Math.cos(s.t)); if (!hidden && Math.hypot(G.x - s.x, G.y - s.y) < .95) { seen = 'light'; G.alarm += 2 * (1 - .08 * up('cloak')); } }
+    for (const s of L.lights) { s.t += s.spd; s.x = s.x0 + (s.x1 - s.x0) * (.5 - .5 * Math.cos(s.t)); if (!hidden && Math.hypot(G.x - s.x, G.y - s.y) < .95) { seen = 'light'; G.alarm += 1.5 * (1 - .08 * up('cloak')); } }
     if (G.demo) return;
     if (seen) { G.by = seen; if (!G.seenThis) { G.seenThis = true; tone(880, .12, 'square', .05); tone(1175, .18, 'square', .05, 0, .1); } if (G.t % 12 === 0) tone(660, .05, 'square', .03); }
-    else G.alarm = Math.max(0, G.alarm - .55 * (1 + .2 * up('nerves')));
+    else G.alarm = Math.max(0, G.alarm - .8 * (1 + .2 * up('nerves')));
     music.intensity = Math.min(5, 1 + Math.floor(G.floor / 3) + (G.alarm > 40 ? 2 : 0)); music.tense = G.alarm > 20;
     if (G.alarm >= 100) { G.alarm = 100; gstate = 'ending'; G.over = 80; G.flash = 1; G.shake = 14; musicStop(); pauseBtn.hidden = true; buzz([40, 30, 80]); noise(.5, .2); chime([880, 660, 440], 'square', .05, .14); return; }
     // loot and the exit
@@ -140,7 +140,7 @@
   let acc = 0, lastFrame = 0, frameNo = 0;
   function startRun(mode) {
     if (GAME.modes.some(m => m.id === mode)) D.mode = mode; else mode = D.mode;
-    initAudio(); newGame(mode); gstate = 'run'; overlay.hidden = true; pauseBtn.hidden = false; $('top').hidden = true; resize();
+    initAudio(); newGame(mode); armRun(mode); gstate = 'run'; overlay.hidden = true; pauseBtn.hidden = false; $('top').hidden = true; resize();
     if (mode === 'daily') say(`DAILY JOB · ${dayLabel.toUpperCase()}`, '#4aa3ff', 160);
     chime([392, 523]); music.intensity = 1; music.tense = false; musicStart(); acc = 0; lastFrame = performance.now();
   }

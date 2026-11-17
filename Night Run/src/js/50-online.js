@@ -72,7 +72,7 @@
     syncing = false;
     if (syncAgain) { syncAgain = false; cloudPush(); }
   }
-  function cloudForget() { save.acct = null; lastPushed = ''; friendReqs = 0; fr.list = []; fr.incoming = []; fr.outgoing = []; fr.at = 0; fr.st = 'idle'; adm.ov = null; }
+  function cloudForget() { save.acct = null; lastPushed = ''; friendReqs = 0; fr.list = []; fr.incoming = []; fr.outgoing = []; fr.at = 0; fr.st = 'idle'; }
   function signedOut(msg) { cloudForget(); setStudioAcct(null); authErr = msg || ''; authMode = 'login'; saveLocal(); if (!overlay.hidden) render(); }
   function takeAccount(res) {
     save.acct = { id: String(res.id), username: String(res.username), token: res.token || save.acct.token, admin: !!res.admin, rev: res.rev == null ? null : +res.rev };
@@ -156,12 +156,16 @@
     return `<div class="box"><h3>${title} <b>${b.count > b.top.length ? `Top ${b.top.length} of ${fmt(b.count)}` : b.count === 1 ? '1 rider' : fmt(b.count) + ' riders'}</b></h3>${rows ? `<ol class="lb">${rows}</ol>${mine}` : `<p>Nobody has posted here yet. Be the first.</p>`}
       ${save.acct ? '' : `<p class="sub" style="margin-top:8px">Log in from your profile to post your scores.</p>`}</div>`;
   }
+  // A run ticket: asked for when a run starts, sent with its score. The server only accepts a score for a run it saw start.
+  let runTok = null;
+  function armRun(mode) { runTok = save.acct && accountsOn() ? Studio.runStart('run', mode, mode === 'daily' ? dayKey : '') : null; }
   function submitScore(r) {
     if (!accountsOn()) return;
     if (!save.acct) { r.post = 'Create a free account from your profile to post scores to the leaderboards.'; return; }
     const tab = r.mode, period = tab === 'daily' ? dayKey : '';
     r.post = 'Posting your score…';
-    rpc('ng_submit', { p_token: save.acct.token, p_game: 'run', p_board: tab, p_period: period, p_score: r.s, p_meta: { dist: r.d, zone: r.z, secs: r.secs, v: APP_VERSION } })
+    const tok = save.acct.token;
+    Promise.resolve(runTok).then(run => rpc('ng_submit', { p_token: tok, p_game: 'run', p_board: tab, p_period: period, p_score: r.s, p_meta: { dist: r.d, zone: r.z, secs: r.secs, v: APP_VERSION }, p_run: run }))
       .then(res => { r.post = res && res.error ? esc(res.error) : res && res.rank ? `${res.best ? 'New personal best on the board' : 'Your best still stands'}: <b>#${res.rank}</b> of ${fmt(res.count)} on ${tab === 'daily' ? "today's course" : tab === 'park' ? 'Trick Park' : 'Free Ride'}.` : ''; const b = boards[boardKey(tab)]; if (b) b.at = 0; boardLoad(tab, true); })
       .catch(e => { if (loggedOut(e)) return signedOut("You were logged out, so that run wasn't posted."); r.post = "Couldn't reach the leaderboard, so this run wasn't posted."; })
       .finally(() => { if (lastRun === r && view === 'run-over' && !overlay.hidden) render(); });

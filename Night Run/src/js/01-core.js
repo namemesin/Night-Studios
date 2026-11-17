@@ -1,8 +1,7 @@
   /* ================= NIGHT RUN: core ================= */
   // Online setup: paste your Supabase project URL and publishable key. Leave empty to keep everything on the device.
   // The server side lives in backend/night-games.sql. Never paste the secret (service_role) key here.
-  const SUPABASE_URL = 'https://bpspwjzxglazmonacbtr.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_PCt45qNSdR6dPRehXvr4KQ_YeLWpE9Q';
+  const SUPABASE_URL = Studio.url, SUPABASE_KEY = Studio.key; // the server address lives in one place: shared/studio.js
   const APP_VERSION = 'dev'; // the publish step replaces this with the real version number
   const DEV = APP_VERSION.startsWith('dev');
   const OFFLINE = /[?&]offline\b/.test(location.search); // local testing without touching the server

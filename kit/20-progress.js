@@ -77,10 +77,10 @@
     L.runs++; L.secs += Math.round(o.secs); for (const k of LIFE_KEYS) if (k in S) L[k] += Math.floor(S[k]);
     if (spec.daily && D.dlast !== dayKey) { D.dlast = dayKey; L.dailyDays++; }
     newMis.push(...missionTick(S, true)); newAch.push(...checkAch(S));
-    const paid = earn(Math.round(o.coins * (1 + .1 * up('lucky')))), lv = addXP(Math.round(o.xp));
+    const xpGain = Math.round(o.xp * Studio.eventMult('xp')), paid = earn(Math.round(o.coins * (1 + .1 * up('lucky')) * Studio.eventMult('coins'))), lv = addXP(xpGain);
     newAch.push(...checkAch(S));
     D.top.push({ s, n: o.note || '', m: mode }); D.top.sort((a, b) => b.s - a.s); D.top = D.top.slice(0, 8);
-    lastRun = { s, isBest, title: isBest ? 'New best!' : o.title, line: o.line, rows: o.rows || [], mode, coins: paid, xp: Math.round(o.xp), lv, ach: newAch, mis: newMis, secs: Math.round(o.secs * 10) / 10, meta: o.meta || {}, post: '' };
+    lastRun = { s, isBest, title: isBest ? 'New best!' : o.title, line: o.line, rows: o.rows || [], mode, coins: paid, xp: xpGain, lv, ach: newAch, mis: newMis, secs: Math.round(o.secs * 10) / 10, meta: o.meta || {}, post: '' };
     fixEquipped(); persist();
     submitScore(lastRun);
     if (o.log) logRun(Object.assign({ mode, s, t: lastRun.secs, n: L.runs, lv: level(), up: UPG.reduce((n, u) => n + up(u.id), 0) }, o.log));

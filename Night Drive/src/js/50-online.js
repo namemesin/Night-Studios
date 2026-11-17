@@ -15,13 +15,13 @@
   }
   const loggedOut = e => /Not logged in/.test(String(e && e.message));
   const missing = e => e && (e.status === 404 || /schema cache|Could not find the function/i.test(String(e.message)));
-  function onlineNotes() { return accountsOn() && !save.acct ? `<button class="go violet" type="button" data-act="go:account">Log in with Night Studios<small>Post scores and keep this game's progress on every device</small></button>` : ''; }
+  function onlineNotes() { return Studio.notesHTML() + (accountsOn() && !save.acct ? `<button class="go violet" type="button" data-act="go:account">Log in with Night Studios<small>Post scores and keep this game's progress on every device</small></button>` : ''); }
 
   // Two copies of this game's progress (this device and the account) are merged so nothing earned on either is lost.
   const maxObj = (a, b, ks) => { for (const k of ks) a[k] = Math.max(int(a[k]), int(b && b[k])); };
   function mergeSave(remote) {
     if (!remote || typeof remote !== 'object') return;
-    save.earned = Math.max(save.earned, int(remote.earned)); save.spent = Math.min(Math.max(save.spent, int(remote.spent)), save.earned); save.xp = Math.max(save.xp, int(remote.xp));
+    save.earned = Math.max(save.earned, int(remote.earned)); save.spent = Math.min(Math.max(save.spent, int(remote.spent)), save.earned); save.xp = Math.max(save.xp, int(remote.xp)); save.gift = Math.max(int(save.gift), int(remote.gift));
     const A = D, B = cleanData(remote.d);
     A.best = Math.max(A.best, B.best); A.bestRush = Math.max(A.bestRush, B.bestRush); A.tut = A.tut || B.tut;
     maxObj(A.up, B.up, UPG.map(u => u.id)); maxObj(A.bs, B.bs, RUN_STATS); maxObj(A.life, B.life, LIFE_KEYS);
@@ -32,7 +32,7 @@
     else if (B.missions && A.missions && B.missions.day === A.missions.day) { for (let i = 0; i < 3; i++) { A.missions.prog[i] = Math.max(A.missions.prog[i], B.missions.prog[i]); A.missions.done[i] = A.missions.done[i] || B.missions.done[i]; } A.missions.bonus = A.missions.bonus || B.missions.bonus; }
     fixEquipped(); clearPreviews();
   }
-  const cloudCopy = () => ({ v: 1, earned: save.earned, spent: save.spent, xp: save.xp, level: level(), d: save.d });
+  const cloudCopy = () => ({ v: 1, earned: save.earned, spent: save.spent, xp: save.xp, gift: save.gift, level: level(), d: save.d });
   let pushTimer = null, syncing = false, syncAgain = false, lastPushed = '';
   function cloudPush(now) { if (!save.acct || !accountsOn()) return; clearTimeout(pushTimer); pushTimer = setTimeout(cloudSync, now ? 0 : 1500); }
   async function cloudSync() {
@@ -58,6 +58,8 @@
     save.acct = { id: String(res.id), username: String(res.username), token, admin: false, rev: res.rev == null ? null : +res.rev };
     save.name = save.acct.username; setStudioAcct({ id: save.acct.id, username: save.acct.username, token: save.acct.token, admin: (studioAcct() || {}).admin });
     if (res.save) mergeSave(res.save);
+    // coins an admin sent: the server keeps the total ever gifted, and whatever this progress hasn't seen yet is paid out
+    if (int(res.gift) > int(save.gift)) { const n = int(res.gift) - int(save.gift); save.gift = int(res.gift); earn(n); toastUI(`A gift for you: +${fmt(n)} coins`, 'var(--gold)', 5000); sfx.win(); }
     announce(checkAch()); saveLocal(); syncWallet(); cloudPush(true);
   }
   addEventListener('pagehide', () => { try { if (save.acct && accountsOn() && save.acct.rev != null) rpc('ng_game_save', { p_token: save.acct.token, p_game: GAME, p_data: cloudCopy(), p_rev: save.acct.rev }, true).catch(() => {}); } catch (e) {} });
@@ -121,11 +123,15 @@
     const mine = b.me && b.me.rank > b.top.length ? `<ol class="lb" style="margin-top:6px"><li class="me"><span class="n">${b.me.rank}</span><span><b>${esc(playerName())}</b></span><b>${fmt(b.me.score)}</b></li></ol>` : '';
     return `<div class="box"><h3>${title} <b>${b.count > b.top.length ? `Top ${b.top.length} of ${fmt(b.count)}` : b.count === 1 ? '1 driver' : fmt(b.count) + ' drivers'}</b></h3>${rows ? `<ol class="lb">${rows}</ol>${mine}` : `<p>Nobody has posted here yet. Be the first.</p>`}${save.acct ? '' : `<p class="sub" style="margin-top:8px">Log in from your profile to post your scores.</p>`}</div>`;
   }
+  // A run ticket: asked for when a run starts, sent with its score. The server only accepts a score for a run it saw start.
+  let runTok = null;
+  function armRun(mode) { runTok = save.acct && accountsOn() ? Studio.runStart(GAME, mode, mode === 'daily' ? dayKey : '') : null; }
   function submitScore(r) {
     if (!accountsOn()) return;
     if (!save.acct) { r.post = 'Log in with Night Studios from your profile to post scores.'; return; }
     const tab = r.mode; r.post = 'Posting your score…';
-    rpc('ng_submit', { p_token: save.acct.token, p_game: GAME, p_board: tab, p_period: tab === 'daily' ? dayKey : '', p_score: r.s, p_meta: { dist: r.d, zone: r.z, secs: r.secs, v: APP_VERSION } })
+    const tok = save.acct.token;
+    Promise.resolve(runTok).then(run => rpc('ng_submit', { p_token: tok, p_game: GAME, p_board: tab, p_period: tab === 'daily' ? dayKey : '', p_score: r.s, p_meta: { dist: r.d, zone: r.z, secs: r.secs, v: APP_VERSION } , p_run: run }))
       .then(res => { r.post = res && res.error ? esc(res.error) : res && res.rank ? `${res.best ? 'New personal best on the board' : 'Your best still stands'}: <b>#${res.rank}</b> of ${fmt(res.count)} on ${tab === 'daily' ? "today's route" : tab === 'rush' ? 'Rush Hour' : 'Night Drive'}.` : ''; const b = boards[boardKey(tab)]; if (b) b.at = 0; boardLoad(tab, true); })
       .catch(e => { if (loggedOut(e)) return signedOut("You were logged out, so that drive wasn't posted."); r.post = "Couldn't reach the leaderboard, so this drive wasn't posted."; })
       .finally(() => { if (lastRun === r && view === 'over' && !overlay.hidden) render(); });

@@ -430,7 +430,7 @@
   /* ---------- starting, pausing and finishing ---------- */
   function startRun(mode) {
     if (mode === 'daily' || mode === 'free' || mode === 'park') R.mode = mode; else mode = R.mode;
-    initAudio(); resize(); newGame(mode);
+    initAudio(); resize(); newGame(mode); armRun(mode);
     gstate = 'run'; overlay.hidden = true; pauseBtn.hidden = false; flareBtn.hidden = grabBtn.hidden = true; $('top').hidden = true; resize();
     G.banner = G.park ? 0 : 130;
     if (G.park) say('TRICK PARK · 75 SECONDS · NOTHING TO HIT', '#ffd24a', 170);

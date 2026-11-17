@@ -31,7 +31,7 @@
   const COS = { thief: THIEVES }, COS_LABEL = { thief: 'Thieves' };
   const UPG = [
     { id: 'shoes', n: 'Soft Soles', cost: [200, 500, 1100], d: l => l ? `Move ${l * 5}% faster` : 'Move faster' },
-    { id: 'smoke', n: 'Deep Pockets', cost: [300, 900], d: l => `Start each job with ${1 + l} smoke bomb${l ? 's' : ''}` },
+    { id: 'smoke', n: 'Deep Pockets', cost: [300, 900], d: l => `Start each job with ${2 + l} smoke bombs` },
     { id: 'cloak', n: 'Dark Clothes', cost: [200, 500, 1000, 2000], d: l => l ? `The alarm fills ${l * 8}% slower` : 'The alarm fills slower' },
     { id: 'nerves', n: 'Steady Breath', cost: [200, 500, 1000], d: l => l ? `The alarm drains ${l * 20}% faster` : 'The alarm drains faster' },
     { id: 'fence', n: 'Good Fence', cost: [250, 600, 1300, 2400], d: l => l ? `Loot is worth ${l * 10}% more` : 'Loot is worth more' },
