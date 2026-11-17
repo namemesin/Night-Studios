@@ -1,6 +1,6 @@
 # Night Studios
 
-Arcade games after dark, all on one site: https://namemesin.github.io/night-run/
+Arcade games after dark, all on one site: https://namemesin.github.io/Night-Studios/
 
 - `Hub/` is the home page: pick a game, log in once for all of them.
 - `Night Run/` and `Night Drive/` are the games. Each keeps its own progress, currency and leaderboards.
