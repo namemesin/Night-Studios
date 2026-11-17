@@ -38,6 +38,8 @@
       meta: () => { const d = (readJSON('nightheist-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'The Job · Daily Job']; } },
     { id: 'keep', href: 'keep/', cls: ' keep', name: 'Night Keep', desc: 'Hold the keep against the night. Build towers beside the road, send your knight into the fight and call down meteors.',
       meta: () => { const d = (readJSON('nightkeep-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'Six maps · Daily Siege']; } },
+    { id: 'market', href: 'market/', cls: ' market', name: 'Night Market', desc: 'Run a stall at the night bazaar. Buy low, sell high, chase the rumors and make the rent before every dawn.',
+      meta: () => { const d = (readJSON('nightmarket-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'Open Market · Daily Market']; } },
   ];
   function render() {
     const keep = document.activeElement && document.activeElement.id === 'uname' ? $('uname').value : null;

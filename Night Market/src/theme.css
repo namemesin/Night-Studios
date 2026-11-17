@@ -1,0 +1,7 @@
+:root{--bg:#120a16;--bg2:#1c1022;--card:#27162d;--line:#4f2f55;--mint:#ff8a5c;--violet:#c04a8a}
+.go{color:#2b0f04;box-shadow:0 6px 0 #b3502a}.go:active{box-shadow:0 3px 0 #b3502a}
+.go.alt{color:var(--snow);box-shadow:0 6px 0 rgba(0,0,0,.45)}.go.violet{color:#fff;box-shadow:0 6px 0 rgba(0,0,0,.45)}
+.switch[aria-pressed=true],.buy.on{color:#2b0f04}
+.chip.flk{color:var(--gold)}.chip.flk::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:#ffd24a;box-shadow:inset 0 0 0 2px #b38a12;margin-right:6px}
+.moon{border-radius:5px 5px 7px 7px;background:linear-gradient(180deg,#ffd24a,#ff6b3d);box-shadow:0 0 14px #ff8a5c}
+.overlay{background:linear-gradient(rgba(18,10,22,.8),rgba(18,10,22,.95))}

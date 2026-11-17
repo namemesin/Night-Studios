@@ -1,0 +1,56 @@
+<!doctype html>
+<!-- Built from the src folder by build.py. Edit the files in src, not this one. -->
+<html lang="en" data-game="market">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
+<meta name="theme-color" content="#120a16">
+<meta name="description" content="Run a stall at the night bazaar. Buy low, sell high and make the rent before every dawn.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Night Market">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Night Studios">
+<meta property="og:title" content="Night Market">
+<meta property="og:description" content="Run a stall at the night bazaar. Buy low, sell high and make the rent before every dawn.">
+<title>Night Market</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=DM+Mono:wght@400;500&display=swap">
+<style>
+{{styles}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top" id="top">
+    <button class="brand" id="brandBtn" type="button" aria-label="Night Market home"><span class="moon"></span><b>Night Market</b></button>
+    <div class="wallet">
+      <span class="chip lvl" id="lvlChip" title="Level">Lv 1</span>
+      <span class="chip flk" id="flkChip" title="Coins">0</span>
+      <button class="icon" id="setBtn" type="button" aria-label="Settings">⚙</button>
+    </div>
+  </header>
+  <main class="stage" id="stage">
+    <canvas id="c"></canvas>
+    <button class="pause" id="pauseBtn" type="button" aria-label="Pause" hidden>II</button>
+    <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+  </main>
+</div>
+<script src="../studio.js"></script>
+<script>
+(() => {
+  'use strict';
+{{game}}
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') addEventListener('load', () => navigator.serviceWorker.register('../sw.js').catch(() => {}));
+</script>
+</body>
+</html>

@@ -40,6 +40,7 @@ APPS = [
     dict(id='watch', name='Night Watch', path='watch', folder='Night Watch', styles='Night Run', kit=True),
     dict(id='heist', name='Night Heist', path='heist', folder='Night Heist', styles='Night Run', kit=True),
     dict(id='keep', name='Night Keep', path='keep', folder='Night Keep', styles='Night Run', kit=True),
+    dict(id='market', name='Night Market', path='market', folder='Night Market', styles='Night Run', kit=True),
     dict(id='drive', name='Night Drive', path='drive', folder='Night Drive', styles='Night Drive', kit=False),
 ]
 
