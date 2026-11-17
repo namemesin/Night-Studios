@@ -27,7 +27,7 @@ jobs:
       - name: Build the site
         run: |
           python3 build.py
-          test -f site/index.html && test -f site/run/index.html && test -f site/drive/index.html
+          for page in site/index.html site/run/index.html site/watch/index.html site/heist/index.html; do test -f "$page"; done
       - name: Set the version number
         id: version
         run: |
@@ -42,10 +42,10 @@ jobs:
           else
             version="$major.$(( ${latest##*.} + 1 ))"; new=true
           fi
-          sed -i -E "s/(APP_VERSION = ')[^']*'/\1$version'/" site/index.html site/run/index.html site/drive/index.html
+          sed -i -E "s/(APP_VERSION = ')[^']*'/\1$version'/" site/index.html site/run/index.html site/watch/index.html site/heist/index.html
           sed -i -E "s/(const CACHE = 'night-studios-)[^']*'/\1$version'/" site/sw.js
           printf '{"version": "%s"}\n' "$version" > site/version.json
-          for page in site/index.html site/run/index.html site/drive/index.html; do grep -q "APP_VERSION = '$version'" "$page"; done
+          for page in site/index.html site/run/index.html site/watch/index.html site/heist/index.html; do grep -q "APP_VERSION = '$version'" "$page"; done
           grep -q "const CACHE = 'night-studios-$version'" site/sw.js
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "new=$new" >> "$GITHUB_OUTPUT"

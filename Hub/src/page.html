@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0a1020">
-<meta name="description" content="Night Studios: arcade games after dark. Play Night Run and Night Drive with one login.">
+<meta name="description" content="Night Studios: arcade games after dark. Play Night Run, Night Watch and Night Heist with one login.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,7 +17,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Night Studios">
 <meta property="og:title" content="Night Studios">
-<meta property="og:description" content="Arcade games after dark. Night Run and Night Drive, one login for all of them.">
+<meta property="og:description" content="Arcade games after dark. Night Run, Night Watch and Night Heist, one login for all of them.">
 <meta property="og:image" content="og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <title>Night Studios</title>
@@ -32,9 +32,12 @@ body{background:radial-gradient(900px 500px at 80% -10%,rgba(92,242,176,.16),tra
 .studio{font:34px/1 var(--display);letter-spacing:1px;margin:10px 0 0}
 a.game{text-decoration:none;color:inherit}
 a.game:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
-.game.drive{background:linear-gradient(135deg,#2a1247,#120a26);border-color:#6a2f9c}
-.game.drive::after{background:radial-gradient(circle at 85% 0,rgba(61,245,255,.22),transparent 55%),radial-gradient(circle at 55% 10%,rgba(255,61,203,.2),transparent 50%)}
-.game.drive .tag{color:#3df5ff}
+.game.watch{background:linear-gradient(135deg,#3a2110,#170e08);border-color:#8a5a2a}
+.game.watch::after{background:radial-gradient(circle at 85% 0,rgba(255,179,71,.3),transparent 55%),radial-gradient(circle at 55% 10%,rgba(255,107,61,.18),transparent 50%)}
+.game.watch .tag{color:#ffb347}
+.game.heist{background:linear-gradient(135deg,#10303a,#0a1418);border-color:#2f6b7a}
+.game.heist::after{background:radial-gradient(circle at 85% 0,rgba(92,242,176,.22),transparent 55%),radial-gradient(circle at 55% 10%,rgba(74,163,255,.18),transparent 50%)}
+.game.heist .tag{color:#5cf2b0}
 .game .meta{color:var(--snow);opacity:.8}
 .who{display:flex;justify-content:space-between;align-items:center;gap:10px}
 </style>

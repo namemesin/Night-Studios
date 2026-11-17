@@ -1,7 +1,7 @@
 {
   "name": "Night Studios",
   "short_name": "Night Studios",
-  "description": "Night Studios: arcade games after dark. Night Run and Night Drive, one login for all of them.",
+  "description": "Night Studios: arcade games after dark. Night Run, Night Watch and Night Heist, one login for all of them.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

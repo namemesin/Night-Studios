@@ -30,8 +30,10 @@
   const GAMES = [
     { href: 'run/', cls: '', name: 'Night Run', desc: 'Snowboard a midnight mountain. Spin off kickers, grind rails and skim the trees to build a multiplier.',
       meta: () => { const r = ((readJSON('nightgames-save1') || {}).games || {}).run || {}; return [r.best ? 'Your best ' + fmt(r.best) : 'Not played yet', 'Free Ride · Daily Course · Trick Park']; } },
-    { href: 'drive/', cls: ' drive', name: 'Night Drive', desc: 'Race the dawn through a neon city. Weave traffic, draft for nitro and skim past cars to keep the clock alive.',
-      meta: () => { const d = (readJSON('nightdrive-save1') || {}).d || {}; return [d.best ? 'Your best ' + fmt(d.best) : 'Not played yet', 'Night Drive · Daily Route · Rush Hour']; } },
+    { href: 'watch/', cls: ' watch', name: 'Night Watch', desc: 'Keep the campfire alive until sunrise. Build lanterns, brambles, flares and beacons to hold back the shades.',
+      meta: () => { const d = (readJSON('nightwatch-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'Keep Watch · Daily Watch']; } },
+    { href: 'heist/', cls: ' heist', name: 'Night Heist', desc: 'Slip past the guards and searchlights, take the vault piece and get out. Every floor is tighter than the last.',
+      meta: () => { const d = (readJSON('nightheist-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'The Job · Daily Job']; } },
   ];
   function render() {
     const keep = document.activeElement && document.activeElement.id === 'uname' ? $('uname').value : null;
@@ -47,7 +49,7 @@
         <label for="upass">Password</label><input id="upass" type="password" maxlength="72" autocomplete="${reg ? 'new-password' : 'current-password'}" placeholder="${reg ? 'At least 6 characters' : 'Your password'}">
         <p class="err" role="alert">${esc(err)}</p><button class="go violet" type="submit" ${busy ? 'disabled' : ''}>${busy ? 'One sec…' : reg ? 'Create login' : 'Log in'}</button>
         <p class="sub">${reg ? "Posts your scores and keeps each game's progress on every device. There's no password reset, so pick one you'll remember." : 'You can also just play. Logging in later keeps what you earned on this device.'}</p></form>`; }
-    panel.innerHTML = `<h1 class="studio">Night Studios</h1><p>Arcade games after dark. Pick one and play.</p><div class="games">${cards}<div class="game soon"><span class="tag">COMING SOON</span><h3>More on the way</h3><p>New games will show up here. Each one keeps its own progress, currency and leaderboards.</p></div></div>${login}<p class="ver">Night Studios · version ${esc(APP_VERSION)}</p>`;
+    panel.innerHTML = `<h1 class="studio">Night Studios</h1><p>Three games after dark. Pick one and play.</p><div class="games">${cards}<div class="game soon"><span class="tag">COMING SOON</span><h3>More on the way</h3><p>New games will show up here. Each one keeps its own progress, currency and leaderboards.</p></div></div>${login}<p class="ver">Night Studios · version ${esc(APP_VERSION)}</p>`;
     if (keep !== null && $('uname')) { $('uname').value = keep; }
   }
   panel.addEventListener('click', async e => {

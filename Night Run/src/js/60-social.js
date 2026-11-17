@@ -112,6 +112,8 @@
     run: { n: 'Night Run', bucket: 250, unit: m => fmt(m) + ' m', zones: ZONES.map(z => z.name), causes: { tree: 'Tree', rock: 'Rock', skier: 'Skier', snowman: 'Snowman', crev: 'Crevasse', landing: 'Bad landing', time: 'Trick Park timer', crash: 'Crash' } },
     drive: { n: 'Night Drive', bucket: 500, unit: m => (m / 1000).toFixed(2) + ' km', zones: ['Downtown', 'Neon Strip', 'Harbor Bridge', 'The Tunnel', 'Hill Pass', 'Skyline'], causes: { dawn: 'Ran out of night', time: 'Rush Hour timer' },
       hits: { car: 'Car', van: 'Van', truck: 'Truck', oncoming: 'Oncoming car', lanechange: 'Lane changer' } },
+    watch: { n: 'Night Watch', bucket: 2, unit: m => m + ' waves', zones: Array.from({ length: 21 }, (_, i) => 'Night ' + (i + 1)), causes: { shade: 'Shade got through', runner: 'Runner got through', brute: 'Brute got through', wisp: 'Wisp got through', eclipse: 'Eclipse got through', fire: 'Fire went out' } },
+    heist: { n: 'Night Heist', bucket: 1, unit: m => m + ' floors', zones: Array.from({ length: 21 }, (_, i) => 'Floor ' + (i + 1)), causes: { guard: 'Caught by a guard', light: 'Caught in a searchlight' } },
   };
   const ast = { game: 'run', days: 7, data: null, st: 'idle', key: '' };
   async function admStats() {
