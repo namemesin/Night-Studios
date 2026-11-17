@@ -26,7 +26,7 @@
     let h = '';
     if (cfg.msg && cfg.msgEnds > Date.now()) h += `<div class="box" style="border-color:var(--ice)"><h3>Announcement</h3><p>${esc(cfg.msg)}</p></div>`;
     if (serverEvent('xp') > 1 || serverEvent('flakes') > 1) { const m = /^(flakes|xp|both)([23])$/.exec(cfg.ev); h += `<div class="box" style="border-color:var(--gold)"><h3>${m[2] === '3' ? 'Triple' : 'Double'} ${m[1] === 'both' ? 'flakes and XP' : m[1] === 'xp' ? 'XP' : 'flakes'} <b>${leftText(cfg.evEnds - Date.now())} left</b></h3><p>On every run, in every game.</p></div>`; }
-    if (accountsOn() && !save.acct) h += `<button class="go violet" type="button" data-act="go:account">Create a free account<small>Post scores and keep your progress on every device</small></button>`;
+    if (accountsOn() && !save.acct) h += `<button class="go violet" type="button" data-act="go:account">Log in with Night Studios<small>Post scores and keep your progress on every device</small></button>`;
     return h;
   }
 
@@ -73,10 +73,10 @@
     if (syncAgain) { syncAgain = false; cloudPush(); }
   }
   function cloudForget() { save.acct = null; lastPushed = ''; friendReqs = 0; fr.list = []; fr.incoming = []; fr.outgoing = []; fr.at = 0; fr.st = 'idle'; adm.ov = null; }
-  function signedOut(msg) { cloudForget(); authErr = msg || ''; authMode = 'login'; saveLocal(); if (!overlay.hidden) render(); }
+  function signedOut(msg) { cloudForget(); setStudioAcct(null); authErr = msg || ''; authMode = 'login'; saveLocal(); if (!overlay.hidden) render(); }
   function takeAccount(res) {
     save.acct = { id: String(res.id), username: String(res.username), token: res.token || save.acct.token, admin: !!res.admin, rev: res.rev == null ? null : +res.rev };
-    save.name = save.acct.username;
+    save.name = save.acct.username; setStudioAcct(save.acct);
     if (res.save) mergeSave(res.save);
     // flakes an admin sent: the server keeps the total ever gifted, and whatever this progress hasn't seen yet is paid out
     if (int(res.gift) > save.gift) { const n = int(res.gift) - save.gift; save.gift = int(res.gift); earn(n); toastUI(`A gift for you: +${fmt(n)} flakes`, 'var(--gold)', 5000); sfx.win(); }
@@ -88,9 +88,9 @@
   /* ---------- account screen ---------- */
   VIEWS.account = () => {
     if (!accountsOn()) return `${backBtn('profile')}<h2>Account</h2><p>Accounts aren't available right now. Your progress is saved on this device.</p>`;
-    if (save.acct) return `${backBtn('profile')}<h2>Account</h2><p>Signed in as <b>${esc(save.acct.username)}</b>. Progress saves to your account automatically.</p>${acctNote ? `<p class="ok">${esc(acctNote)}</p>` : ''}
+    if (save.acct) return `${backBtn('profile')}<h2>Account</h2><p>Signed in as <b>${esc(save.acct.username)}</b> with your Night Studios login, the same one in every Night Studios game. Night Run's flakes, unlocks and scores belong to Night Run only.</p>${acctNote ? `<p class="ok">${esc(acctNote)}</p>` : ''}
       <form class="box" id="passForm" novalidate><label for="oldPass">Change password</label><input id="oldPass" type="password" maxlength="72" autocomplete="current-password" placeholder="Current password"><input id="newPass" type="password" maxlength="72" autocomplete="new-password" placeholder="New password (6+ characters)"><p class="err" role="alert">${esc(authErr)}</p><button class="buy" type="submit" ${authBusy ? 'disabled' : ''}>Change password</button></form>
-      <button class="go alt" type="button" data-act="logout" ${authBusy ? 'disabled' : ''}>Log out</button><p class="sub">Logging out leaves a copy of your progress on this device.</p>`;
+      <button class="go alt" type="button" data-act="logout" ${authBusy ? 'disabled' : ''}>Log out</button><p class="sub">Logging out signs you out of every Night Studios game on this device and leaves a copy of your progress here.</p>`;
     const reg = authMode === 'register';
     return `${backBtn('profile')}<h2>${reg ? 'Create account' : 'Log in'}</h2>
       <div class="tabs"><button type="button" data-act="auth:register" aria-pressed="${reg}">New account</button><button type="button" data-act="auth:login" aria-pressed="${!reg}">I have one</button></div>
@@ -167,8 +167,29 @@
       .finally(() => { if (lastRun === r && view === 'run-over' && !overlay.hidden) render(); });
   }
 
+
+  /* ---------- run data for balancing ---------- */
+  // Every run that ends, restarts or is quit reports how far it got and what ended it, so the game can be balanced
+  // on what really happens. No names or personal details. Players can switch it off in Settings. Runs that can't be
+  // sent (offline) wait in a small queue and go out the next time the game opens.
+  function sendRun(item) { return fetch(sbBase + 'ng_log_run', { method: 'POST', keepalive: true, headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(item) }).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); }); }
+  function logRun(d) {
+    try {
+      if (!sbReady || !save.settings.stats || (DEV && !/[?&]logs\b/.test(location.search))) return; // local development stays out of the data; add ?logs to test it
+      const item = { p_game: 'run', p_data: Object.assign({ v: APP_VERSION, touch: usedTouch, at: Date.now() }, d), p_device: save.dev, p_token: save.acct ? save.acct.token : null };
+      sendRun(item).catch(() => { try { const q = JSON.parse(localStorage.getItem('nightgames-runq') || '[]'); q.push(item); localStorage.setItem('nightgames-runq', JSON.stringify(q.slice(-20))); } catch (e) {} });
+    } catch (e) {}
+  }
+  function flushRuns() { let q = []; try { q = JSON.parse(localStorage.getItem('nightgames-runq') || '[]'); localStorage.removeItem('nightgames-runq'); } catch (e) {} if (Array.isArray(q)) q.forEach((item, i) => setTimeout(() => sendRun(item).catch(() => {}), i * 2200)); }
+
   async function onlineBoot() {
     if (!sbReady) return;
+    flushRuns();
+    // pick up the studio login: logged in or out on the home page or in another game since this one was last open
+    const shared = studioAcct();
+    if (shared === undefined) { if (save.acct) setStudioAcct(save.acct); }
+    else if (shared === null) { if (save.acct) { cloudForget(); saveLocal(); } }
+    else if (!save.acct || save.acct.token !== shared.token) { save.acct = { id: String(shared.id), username: String(shared.username), token: shared.token, admin: !!shared.admin, rev: null }; lastPushed = ''; saveLocal(); }
     try {
       if (save.acct) {
         const me = await rpc('ng_me', { p_token: save.acct.token });

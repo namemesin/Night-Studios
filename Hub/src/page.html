@@ -1,0 +1,60 @@
+<!doctype html>
+<!-- Built from the Hub/src folder by build.py. Edit the files there, not this one. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a1020">
+<meta name="description" content="Night Studios: arcade games after dark. Play Night Run and Night Drive with one login.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Night Studios">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Night Studios">
+<meta property="og:title" content="Night Studios">
+<meta property="og:description" content="Arcade games after dark. Night Run and Night Drive, one login for all of them.">
+<meta property="og:image" content="og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<title>Night Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=DM+Mono:wght@400;500&display=swap">
+<style>
+{{styles}}
+</style>
+<style>
+body{background:radial-gradient(900px 500px at 80% -10%,rgba(92,242,176,.16),transparent 60%),radial-gradient(800px 500px at 0 0,rgba(180,140,255,.16),transparent 60%),var(--bg);background-attachment:fixed}
+.app{height:auto;min-height:100%}
+.studio{font:34px/1 var(--display);letter-spacing:1px;margin:10px 0 0}
+a.game{text-decoration:none;color:inherit}
+a.game:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
+.game.drive{background:linear-gradient(135deg,#2a1247,#120a26);border-color:#6a2f9c}
+.game.drive::after{background:radial-gradient(circle at 85% 0,rgba(61,245,255,.22),transparent 55%),radial-gradient(circle at 55% 10%,rgba(255,61,203,.2),transparent 50%)}
+.game.drive .tag{color:#3df5ff}
+.game .meta{color:var(--snow);opacity:.8}
+.who{display:flex;justify-content:space-between;align-items:center;gap:10px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <span class="brand"><span class="moon"></span><b>Night Studios</b></span>
+    <div class="wallet"><span class="chip" id="whoChip">Guest</span></div>
+  </header>
+  <main><div class="panel" id="panel"></div></main>
+</div>
+<script>
+(() => {
+  'use strict';
+{{game}}
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>

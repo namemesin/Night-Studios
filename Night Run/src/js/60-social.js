@@ -42,7 +42,7 @@
   const seenText = ts => { const m = Math.max(0, Math.round((Date.now() - Date.parse(ts)) / 60000)); return !ts ? '' : m < 6 ? 'online now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`; };
   VIEWS.friends = () => {
     const top = `${backBtn()}<h2>Friends</h2>`;
-    if (!canSocial()) return top + `<p>${accountsOn() ? 'Log in to add friends, compare scores and race their ghosts.' : "Friends aren't available right now."}</p>${accountsOn() ? `<button class="go violet" type="button" data-act="go:account">Log in or create an account</button>` : ''}`;
+    if (!canSocial()) return top + `<p>${accountsOn() ? 'Log in to add friends, compare scores and race their ghosts.' : "Friends aren't available right now."}</p>${accountsOn() ? `<button class="go violet" type="button" data-act="go:account">Log in with Night Studios</button>` : ''}`;
     if (Date.now() - fr.at > 15000) loadFriends();
     const msg = fr.msg ? `<p class="${fr.msg.ok ? 'ok' : 'err'}" role="alert">${esc(fr.msg.t)}</p>` : '';
     const add = `<form class="box" id="friendForm" novalidate><label for="friendName">Add a friend by username</label><div class="inline"><input id="friendName" type="text" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Their username"><button class="buy" type="submit" ${fr.busy ? 'disabled' : ''}>Add</button></div></form>`;
@@ -95,6 +95,7 @@
       <form class="box" id="admEv" novalidate><h3>Event <b>${evOn ? esc(cfg.ev) + ' · ' + leftText(cfg.evEnds - Date.now()) + ' left' : 'off'}</b></h3><div class="inline"><select id="admEvKind" style="padding:10px;border-radius:10px;background:var(--bg2);color:var(--snow);border:1px solid var(--line)">${[['xp2', 'Double XP'], ['flakes2', 'Double flakes'], ['both2', 'Double both'], ['xp3', 'Triple XP'], ['flakes3', 'Triple flakes'], ['both3', 'Triple both']].map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>${hours('admEvHrs')}</div><span><button class="buy" type="submit" ${dis}>Start</button> <button class="buy ghost" type="button" data-act="admevoff" ${dis}>End it</button></span></form>
       <form class="box" id="admGift" novalidate><h3>Gift flakes</h3><div class="inline"><input id="admGiftName" type="text" maxlength="16" autocomplete="off" placeholder="Username, or * for everyone"><input id="admGiftAmt" type="text" inputmode="numeric" maxlength="7" placeholder="Flakes" style="width:110px"></div><button class="buy" type="submit" ${dis}>Send gift</button></form>
       <form class="box" id="admBan" novalidate><h3>Leaderboard ban</h3><div class="inline"><input id="admBanName" type="text" maxlength="16" autocomplete="off" placeholder="Username"><span><button class="buy" type="submit" ${dis}>Ban</button> <button class="buy ghost" type="button" data-act="admunban" ${dis}>Unban</button></span></div><p class="sub">Banned players keep playing but disappear from every board.</p></form>
+      ${statsHTML()}
       ${o && o.recent ? `<div class="box"><h3>Recently active</h3><ol class="lb">${o.recent.map(p => `<li><span class="n">${int(p.level)}</span><span>${esc(p.name)}${p.admin ? ' <span class="ttl">admin</span>' : ''}${p.banned ? ' <span class="ttl" style="color:var(--rose)">banned</span>' : ''} <span class="sub">· ${esc(seenText(p.last_seen))}</span></span><b>${p.best ? fmt(p.best) : '–'}</b></li>`).join('')}</ol></div>` : ''}`;
   };
   FORMS.admAnn = () => { const t = $('admAnnText').value.trim(); if (!t) { adm.msg = { t: 'Type the announcement first.' }; return render(); } admDo('ng_admin_announce', { p_message: t, p_hours: +$('admAnnHrs').value }, 'Announcement posted.'); };
@@ -105,3 +106,55 @@
   const banName = () => $('admBanName').value.trim();
   FORMS.admBan = () => { if (banName()) admDo('ng_admin_ban', { p_username: banName(), p_banned: true }, r => `${r.username} is banned from the boards.`); };
   ACTIONS.admunban = () => { if (banName()) admDo('ng_admin_ban', { p_username: banName(), p_banned: false }, r => `${r.username} can post scores again.`); };
+
+  /* ---------- player data: where and how runs end, for balancing every game ---------- */
+  const STAT_GAMES = {
+    run: { n: 'Night Run', bucket: 250, unit: m => fmt(m) + ' m', zones: ZONES.map(z => z.name), causes: { tree: 'Tree', rock: 'Rock', skier: 'Skier', snowman: 'Snowman', crev: 'Crevasse', landing: 'Bad landing', time: 'Trick Park timer', crash: 'Crash' } },
+    drive: { n: 'Night Drive', bucket: 500, unit: m => (m / 1000).toFixed(2) + ' km', zones: ['Downtown', 'Neon Strip', 'Harbor Bridge', 'The Tunnel', 'Hill Pass', 'Skyline'], causes: { dawn: 'Ran out of night', time: 'Rush Hour timer' },
+      hits: { car: 'Car', van: 'Van', truck: 'Truck', oncoming: 'Oncoming car', lanechange: 'Lane changer' } },
+  };
+  const ast = { game: 'run', days: 7, data: null, st: 'idle', key: '' };
+  async function admStats() {
+    if (!save.acct) return;
+    const key = ast.game + ast.days; ast.key = key; ast.st = 'loading';
+    try { const d = await rpc('ng_admin_stats', { p_token: save.acct.token, p_game: ast.game, p_days: ast.days, p_bucket: STAT_GAMES[ast.game].bucket }); if (ast.key !== key) return; ast.data = d || {}; ast.st = 'ready'; }
+    catch (e) { if (ast.key !== key) return; ast.st = 'error'; }
+    if (!overlay.hidden && view === 'admin') render();
+  }
+  ACTIONS.astg = g => { if (STAT_GAMES[g]) { ast.game = g; ast.data = null; admStats(); render(); } };
+  ACTIONS.astd = d => { ast.days = +d || 7; ast.data = null; admStats(); render(); };
+  function statsHTML() {
+    const G0 = STAT_GAMES[ast.game], d = ast.data;
+    const tabs = `<div class="tabs">${Object.keys(STAT_GAMES).map(g => `<button type="button" data-act="astg:${g}" aria-pressed="${ast.game === g}">${STAT_GAMES[g].n}</button>`).join('')}</div>
+      <div class="tabs">${[[1, '24 hours'], [7, '7 days'], [30, '30 days'], [90, '90 days']].map(([n, l]) => `<button type="button" data-act="astd:${n}" aria-pressed="${ast.days === n}">${l}</button>`).join('')}</div>`;
+    if (ast.st === 'idle') { admStats(); }
+    if (!d) return `<div class="box"><h3>Player data</h3>${tabs}<p>${ast.st === 'error' ? "Couldn't load the data." : 'Loading…'}</p></div>`;
+    const runs = int(d.runs), pct = (n, of) => of ? Math.round(n / of * 100) + '%' : '–';
+    const rn = n => fmt(n) + (int(n) === 1 ? ' run' : ' runs');
+    const bar = (label, n, of, note) => `<div style="margin-top:7px"><div class="setrow" style="padding:0;font-size:12px"><span>${esc(label)}</span><span class="sub">${note}</span></div>${progBar(of ? n / of : 0)}</div>`;
+    if (!runs && !int(d.restarts) && !int(d.quits)) return `<div class="box"><h3>Player data</h3>${tabs}<p>No runs recorded for ${G0.n} in this period yet.</p></div>`;
+    const all = runs + int(d.restarts) + int(d.quits);
+    const causes = (d.causes || []).map(c => bar(G0.causes[c.c] || (c.c === 'restart' ? 'Restarted' : c.c === 'quit' ? 'Quit' : c.c), c.n, all, `${pct(c.n, all)} · ${fmt(c.n)} · typical ${G0.unit(int(c.med))}`)).join('');
+    const zones = (d.zones || []).map(z => bar(G0.zones[z.z] || 'Zone ' + z.z, z.reached, runs, `${pct(z.reached, runs)} reach it · ${pct(z.ended, runs)} end here`)).join('');
+    const maxB = Math.max(1, ...(d.buckets || []).map(b => b.n));
+    const buckets = (d.buckets || []).map(b => bar(`${G0.unit(b.b * G0.bucket)}${b.b >= 23 ? '+' : ' – ' + G0.unit((b.b + 1) * G0.bucket)}`, b.n, maxB, `${fmt(b.n)} · ${pct(b.n, runs)}`)).join('');
+    const zc = {}; for (const r of d.zoneCauses || []) (zc[r.z] = zc[r.z] || []).push(`${G0.causes[r.c] || r.c} ${fmt(r.n)}`);
+    const zoneWhy = Object.keys(zc).map(z => `<p class="sub"><b>${esc(G0.zones[z] || 'Zone ' + z)}:</b> ${esc(zc[z].join(' · '))}</p>`).join('');
+    const hitTot = (d.hits || []).reduce((n, h) => n + h.n, 0), byKind = {}; for (const h of d.hits || []) byKind[h.k] = (byKind[h.k] || 0) + h.n;
+    const hits = G0.hits && hitTot ? `<h3 style="margin-top:14px">Crashes along the way <b>${fmt(hitTot)} total · ${(hitTot / Math.max(1, runs)).toFixed(1)} per drive</b></h3>${Object.keys(byKind).sort((a, b) => byKind[b] - byKind[a]).map(k => bar(G0.hits[k] || k, byKind[k], hitTot, `${pct(byKind[k], hitTot)} · ${fmt(byKind[k])}`)).join('')}
+      ${G0.zones.map((zn, i) => { const n = (d.hits || []).filter(h => h.z === i).reduce((a, h) => a + h.n, 0); return n ? `<p class="sub"><b>${esc(zn)}:</b> ${fmt(n)} crashes (${(d.hits || []).filter(h => h.z === i).map(h => `${G0.hits[h.k] || h.k} ${h.n}`).join(' · ')})</p>` : ''; }).join('')}` : '';
+    const sideN = ['Far left', 'Left', 'Middle', 'Right', 'Far right'], sideT = (d.sides || []).reduce((n, s) => n + s.n, 0);
+    const sides = (d.sides || []).map(s => `${sideN[s.s]} ${pct(s.n, sideT)}`).join(' · ');
+    const small = (title, rows) => rows.length ? `<p class="sub"><b>${title}:</b> ${rows.join(' · ')}</p>` : '';
+    return `<div class="box"><h3>Player data <b>${G0.n} · last ${ast.days === 1 ? '24 hours' : ast.days + ' days'}</b></h3>${tabs}
+      <div class="stats" style="margin-top:10px">${stat('Runs', fmt(runs))}${stat('Players', fmt(d.players))}${stat('Typical run', G0.unit(int(d.medianM)))}${stat('Top 10% reach', G0.unit(int(d.p90M)))}${stat('Typical time', int(d.medianS) + ' s')}${stat('Typical score', fmt(d.medianScore))}</div>
+      <h3 style="margin-top:14px">What ends runs <b>${pct(int(d.restarts), all)} restarted · ${pct(int(d.quits), all)} quit</b></h3>${causes}
+      <h3 style="margin-top:14px">How far players get</h3>${zones}${zoneWhy}
+      <h3 style="margin-top:14px">Where runs end</h3>${buckets}${hits}
+      <h3 style="margin-top:14px">Who is playing</h3>
+      ${small('By mode', (d.modes || []).map(m => `${esc(m.mode || '?')} ${rn(m.n)}, typical ${G0.unit(int(m.med))}, score ${fmt(m.score)}`))}
+      ${small('Controls', (d.devices || []).map(v => `${v.touch === true ? 'Touch' : v.touch === false ? 'Keyboard' : 'Unknown'} ${rn(v.n)}, typical ${G0.unit(int(v.med))}`))}
+      ${small('Experience', (d.experience || []).map(x => `${['', 'First 5 runs', 'Runs 6 to 25', 'Over 25 runs'][x.g]}: ${rn(x.n)}, typical ${G0.unit(int(x.med))}`))}
+      ${small('Where on the screen runs end', sides ? [sides] : [])}
+      ${small('By version', (d.versions || []).map(v => `${esc(v.version || '?')}: ${rn(v.n)}, typical ${G0.unit(int(v.med))}`))}</div>`;
+  }

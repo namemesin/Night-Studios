@@ -1,7 +1,7 @@
 {
-  "name": "Night Games",
-  "short_name": "Night Games",
-  "description": "Arcade games under the northern lights. Start with Night Run: tricks, rails and a daily course on a midnight mountain.",
+  "name": "Night Studios",
+  "short_name": "Night Studios",
+  "description": "Night Studios: arcade games after dark. Night Run and Night Drive, one login for all of them.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

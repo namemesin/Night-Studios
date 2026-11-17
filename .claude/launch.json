@@ -1,6 +1,14 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "night-games", "runtimeExecutable": "python3", "runtimeArgs": ["build.py", "--serve"], "port": 8000 }
+    {
+      "name": "night-studios",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "build.py",
+        "--serve"
+      ],
+      "port": 8000
+    }
   ]
 }

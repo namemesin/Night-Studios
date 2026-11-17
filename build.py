@@ -1,50 +1,51 @@
 #!/usr/bin/env python3
-"""Joins the files in src/ into night-run-app/index.html.
+"""Builds the Night Studios website into the site/ folder.
 
   python3 build.py           build once
   python3 build.py --serve   play at http://localhost:8000 (rebuilds every time you refresh)
 
-The game's code all lives inside one wrapper function, so the files in src/js/ can use each
-other's code freely. They are joined in filename order, which is why they are numbered.
+The site is one page per app: the studio home page, and one page for each game. Each app keeps its
+source in its own folder (page.html, styles.css and numbered files in js/). An app's JavaScript all
+lives inside one wrapper function, so its files can use each other's code freely; they are joined
+in filename order, which is why they are numbered. Add ?offline to a game's address to test it
+without touching the server.
 """
-import hashlib
 import http.server
+import shutil
 import sys
 from functools import partial
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SRC = ROOT / 'src'
-APP = ROOT / 'night-run-app'
-OUTPUT = APP / 'index.html'
-LAST_BUILD = SRC / '.last-build'  # fingerprint of the last build, to notice edits made to index.html itself
+OUT = ROOT / 'site'
 PORT = 8000
-
-
-def fingerprint(data):
-    return hashlib.sha256(data).hexdigest()
+# (address on the site, source folder, folder whose styles.css it uses)
+APPS = [
+    ('', 'Hub', 'Night Run'),
+    ('run', 'Night Run', 'Night Run'),
+    ('drive', 'Night Drive', 'Night Drive'),
+]
 
 
 def build():
-    if LAST_BUILD.exists() and OUTPUT.exists() and fingerprint(OUTPUT.read_bytes()) != LAST_BUILD.read_text().strip():
-        raise SystemExit(
-            'Stopped: night-run-app/index.html was edited directly, and building would erase that edit.\n'
-            'Copy the edit into the matching file in src/, then delete src/.last-build and build again.'
-        )
-    page = (SRC / 'page.html').read_bytes()
-    styles = (SRC / 'styles.css').read_bytes()
-    game = b''.join(f.read_bytes() for f in sorted((SRC / 'js').glob('*.js')))
-    for placeholder in (b'{{styles}}\n', b'{{game}}\n'):
-        if page.count(placeholder) != 1:
-            raise SystemExit(f'Stopped: src/page.html needs exactly one {placeholder.decode().strip()} line.')
-    html = page.replace(b'{{styles}}\n', styles).replace(b'{{game}}\n', game)
-    OUTPUT.write_bytes(html)
-    LAST_BUILD.write_text(fingerprint(html) + '\n')
+    OUT.mkdir(exist_ok=True)
+    shutil.copytree(ROOT / 'shared', OUT, dirs_exist_ok=True)
+    for path, folder, styles_from in APPS:
+        src = ROOT / folder / 'src'
+        page = (src / 'page.html').read_bytes()
+        styles = (ROOT / styles_from / 'src' / 'styles.css').read_bytes()
+        code = b''.join(f.read_bytes() for f in sorted((src / 'js').glob('*.js')))
+        for placeholder in (b'{{styles}}\n', b'{{game}}\n'):
+            if page.count(placeholder) != 1:
+                raise SystemExit(f'Stopped: {folder}/src/page.html needs exactly one {placeholder.decode().strip()} line.')
+        target = OUT / path
+        target.mkdir(parents=True, exist_ok=True)
+        (target / 'index.html').write_bytes(page.replace(b'{{styles}}\n', styles).replace(b'{{game}}\n', code))
 
 
 class DevHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-        if self.path.split('?')[0] in ('/', '/index.html'):
+        if self.path.split('?')[0].endswith(('/', '/index.html')):
             try:
                 build()
             except SystemExit as stop:
@@ -60,9 +61,9 @@ class DevHandler(http.server.SimpleHTTPRequestHandler):
 
 def serve():
     build()
-    handler = partial(DevHandler, directory=str(APP))
+    handler = partial(DevHandler, directory=str(OUT))
     with http.server.ThreadingHTTPServer(('127.0.0.1', PORT), handler) as server:
-        print(f'Night Games is at http://localhost:{PORT} (press Ctrl+C to stop). Add ?offline to test without the server.')
+        print(f'Night Studios is at http://localhost:{PORT} (press Ctrl+C to stop)')
         try:
             server.serve_forever()
         except KeyboardInterrupt:
@@ -74,4 +75,4 @@ if __name__ == '__main__':
         serve()
     else:
         build()
-        print(f'Built {OUTPUT.relative_to(ROOT)}')
+        print('Built the site into site/')

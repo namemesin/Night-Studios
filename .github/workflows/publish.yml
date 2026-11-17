@@ -1,4 +1,4 @@
-name: Publish Night Games
+name: Publish Night Studios
 
 on:
   push:
@@ -24,11 +24,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # the version number comes from the tags and history
-      - name: Build the game
+      - name: Build the site
         run: |
           python3 build.py
-          cp -R night-run-app site
-          test -f site/index.html
+          test -f site/index.html && test -f site/run/index.html && test -f site/drive/index.html
       - name: Set the version number
         id: version
         run: |
@@ -38,16 +37,16 @@ jobs:
           latest="$(git tag --list "v$major.*" --sort=-v:refname | head -n 1)"
           if [ -z "$latest" ]; then
             version="$major.0"; new=true
-          elif git diff --quiet "$latest" HEAD -- src night-run-app; then
+          elif git diff --quiet "$latest" HEAD -- . ':!README.md' ':!.github' ':!backend'; then
             version="${latest#v}"; new=false
           else
             version="$major.$(( ${latest##*.} + 1 ))"; new=true
           fi
-          sed -i -E "s/(APP_VERSION = ')[^']*'/\1$version'/" site/index.html
-          sed -i -E "s/(const CACHE = 'night-run-)[^']*'/\1$version'/" site/sw.js
+          sed -i -E "s/(APP_VERSION = ')[^']*'/\1$version'/" site/index.html site/run/index.html site/drive/index.html
+          sed -i -E "s/(const CACHE = 'night-studios-)[^']*'/\1$version'/" site/sw.js
           printf '{"version": "%s"}\n' "$version" > site/version.json
-          grep -q "APP_VERSION = '$version'" site/index.html
-          grep -q "const CACHE = 'night-run-$version'" site/sw.js
+          for page in site/index.html site/run/index.html site/drive/index.html; do grep -q "APP_VERSION = '$version'" "$page"; done
+          grep -q "const CACHE = 'night-studios-$version'" site/sw.js
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "new=$new" >> "$GITHUB_OUTPUT"
           echo "Publishing version $version"
@@ -68,5 +67,5 @@ jobs:
           if gh release view "v$VERSION" >/dev/null 2>&1; then
             echo "Release v$VERSION is already posted"
           else
-            gh release create "v$VERSION" --target "$GITHUB_SHA" --title "Night Games $VERSION" --notes "Play it: $PAGE_URL" --generate-notes
+            gh release create "v$VERSION" --target "$GITHUB_SHA" --title "Night Studios $VERSION" --notes "Play it: $PAGE_URL" --generate-notes
           fi

@@ -366,7 +366,7 @@
   // Achievements and missions are checked three times a second, not every frame.
   function liveChecks() {
     const a = checkAch(G.st), ms = missionTick(G.st, false);
-    for (const x of a) { G.newAch.push(x); G.toasts.push({ ach: x, life: 200, max: 200 }); chime(x.tier === 'b' ? [523, 659, 784] : [587, 740, 880, 1175], 'triangle', .055); if (x.tier === 'p' || x.tier === 'm') G.flash = Math.max(G.flash, .5); }
+    for (const x of a) { G.newAch.push(x); G.toasts.push({ ach: x, life: 110, max: 110 }); chime(x.tier === 'b' ? [523, 659, 784] : [587, 740, 880, 1175], 'triangle', .055); if (x.tier === 'p' || x.tier === 'm') G.flash = Math.max(G.flash, .5); }
     for (const x of ms) { G.newMis.push(x); say(`MISSION DONE · +${x.pay} FLAKES`, '#5cf2b0', 170); chime([784, 1175, 1568]); }
     if (a.length || ms.length) saveLocal();
   }
@@ -444,14 +444,22 @@
     show('run-pause');
   }
   function resumeRun() { if (gstate !== 'paused') return; initAudio(); gstate = 'run'; overlay.hidden = true; pauseBtn.hidden = false; musicStart(); acc = 0; lastFrame = performance.now(); }
+  // What a run reports when it ends: where, how and in what state. See the online file for where it goes.
+  function runData(end) {
+    const S = G.st;
+    return { end, mode: G.mode, m: Math.floor(G.px / 10), s: Math.floor(G.score), z: G.zone, t: Math.round(G.t / 6) / 10, x: Math.round(G.x / LW * 1000), n: R.life.runs, sp: Math.round(G.speed * 10) / 10,
+      air: G.air > 0, grind: !!G.grind, ice: G.onIce > 0, flare: G.flareT > 0, shield: !!G.shield, combo: S.maxCombo, live: G.combo, tricks: S.tricks, spin: S.maxSpin, rails: S.rails, gates: S.gates, near: S.nearMiss,
+      smashes: S.smashes, saves: S.saves, flakes: S.flakes, lanterns: S.lanterns, boosts: G.used.join(',') || null, lv: level(), up: UPG.reduce((n, u) => n + up(u.id), 0), ach: achCount() };
+  }
   function refundBoosts() { if (G && G.used.length && G.px / 10 - G.m0 < 100) { for (const id of G.used) R.kit[id] = true; G.used = []; saveLocal(); } }
-  function restartRun() { if (gstate !== 'run' && gstate !== 'paused') return; refundBoosts(); musicStop(true); startRun(G.mode); }
+  function restartRun() { if (gstate !== 'run' && gstate !== 'paused') return; if (G.px / 10 - G.m0 > 30) logRun(runData('restart')); refundBoosts(); musicStop(true); startRun(G.mode); }
   function leaveRun() {
-    if (gstate === 'run' || gstate === 'paused') refundBoosts();
+    if (gstate === 'run' || gstate === 'paused') { if (G.px / 10 - G.m0 > 30) logRun(runData('quit')); refundBoosts(); }
     pendingGhost = null; musicStop(); gstate = 'idle'; $('top').hidden = false; pauseBtn.hidden = flareBtn.hidden = grabBtn.hidden = true; resize(); newGame('free', true);
   }
   function finishRun() {
     const S = G.st, s = Math.floor(G.score), mode = G.mode, L = R.life, m = S.meters;
+    logRun(runData(G.cause || 'crash'));
     S.score = s; if (mode === 'daily') S.daily = s; if (G.park) S.park = s;
     const isBest = G.park ? s > R.bestPark : s > R.best;
     if (G.park) R.bestPark = Math.max(R.bestPark, s); else R.best = Math.max(R.best, s);

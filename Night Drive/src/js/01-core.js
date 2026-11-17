@@ -1,6 +1,7 @@
-  /* ================= NIGHT GAMES: shared core ================= */
-  // Online setup: paste your Supabase project URL and publishable key. Leave empty to keep everything on the device.
-  // The server side lives in backend/night-games.sql. Never paste the secret (service_role) key here.
+  /* ================= NIGHT DRIVE: core ================= */
+  // Online setup: the Night Studios Supabase project. Logins are shared with the studio's other games; progress,
+  // currency and leaderboards are this game's own. Leave these empty to keep everything on the device.
+  // Never paste the secret (service_role) key here.
   const SUPABASE_URL = 'https://bpspwjzxglazmonacbtr.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_PCt45qNSdR6dPRehXvr4KQ_YeLWpE9Q';
   const APP_VERSION = 'dev'; // the publish step replaces this with the real version number
@@ -10,7 +11,7 @@
   const $ = id => document.getElementById(id);
   const cv = $('c'), ctx = cv.getContext('2d', { alpha: false });
   const stage = $('stage'), overlay = $('overlay'), panel = $('panel'), toastBox = $('toasts');
-  const pauseBtn = $('pauseBtn'), flareBtn = $('flareBtn'), grabBtn = $('grabBtn');
+  const pauseBtn = $('pauseBtn'), nitroBtn = $('nitroBtn');
   const TAU = Math.PI * 2;
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -55,16 +56,16 @@
   function rollDay() { const k = todayKey(); if (k === dayKey) return false; dayKey = k; dayLabel = dayLabelOf(k); for (const f of dayHooks) f(); return true; }
 
   /* ---------- save data ---------- */
-  const SAVE_KEY = 'nightgames-save1';
-  const DEF_KEYS = { left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'], flare: ['Space', 'KeyW'], grab: ['ArrowDown', 'KeyS'], pause: ['KeyP', 'Escape'], restart: ['KeyR', ''] };
-  const KEY_ACTIONS = [['left', 'Steer left'], ['right', 'Steer right'], ['flare', 'Fire Flare'], ['grab', 'Grab (in the air)'], ['pause', 'Pause'], ['restart', 'Restart run']];
-  const defSettings = () => ({ music: 70, sfx: 80, shake: true, ghost: true, fx: 'full', steer: 'drag', haptics: true, keys: JSON.parse(JSON.stringify(DEF_KEYS)) });
+  const SAVE_KEY = 'nightdrive-save1';
+  const DEF_KEYS = { left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'], nitro: ['Space', 'ArrowUp'], pause: ['KeyP', 'Escape'], restart: ['KeyR', ''] };
+  const KEY_ACTIONS = [['left', 'Steer left'], ['right', 'Steer right'], ['nitro', 'Nitro'], ['pause', 'Pause'], ['restart', 'Restart drive']];
+  const defSettings = () => ({ music: 70, sfx: 80, shake: true, fx: 'full', steer: 'drag', haptics: true, stats: true, keys: JSON.parse(JSON.stringify(DEF_KEYS)) });
   const NAME_OK = /^[A-Za-z0-9 _.\-]{2,16}$/;
   const cleanName = v => String(v || '').replace(/\s+/g, ' ').trim();
   const int = v => Math.max(0, Math.floor(+v || 0));
   const strList = v => Array.isArray(v) ? [...new Set(v.filter(x => typeof x === 'string' && x.length < 40))] : [];
   const freshSave = () => ({ v: 1, name: '', dev: 'd' + Array.from({ length: 15 }, () => Math.floor(Math.random() * 36).toString(36)).join(''),
-    settings: defSettings(), earned: 0, spent: 0, xp: 0, gift: 0, login: { last: '', streak: 0, total: 0 }, flair: { color: '', title: '', colors: [], titles: [] }, acct: null, games: {} });
+    settings: defSettings(), earned: 0, spent: 0, xp: 0, acct: null, d: {} });
   let save = freshSave();
   function loadSave(raw) {
     const s = freshSave();
@@ -73,23 +74,26 @@
     if (typeof raw.dev === 'string' && /^[a-z0-9]{8,40}$/.test(raw.dev)) s.dev = raw.dev;
     const st = raw.settings || {}, d = s.settings;
     for (const k of ['music', 'sfx']) if (Number.isFinite(+st[k])) d[k] = clamp(Math.round(+st[k]), 0, 100);
-    for (const k of ['shake', 'ghost', 'haptics']) if (typeof st[k] === 'boolean') d[k] = st[k];
+    for (const k of ['shake', 'haptics', 'stats']) if (typeof st[k] === 'boolean') d[k] = st[k];
     if (st.fx === 'low') d.fx = 'low';
     if (st.steer === 'sides') d.steer = 'sides';
     if (st.keys && typeof st.keys === 'object') for (const [a] of KEY_ACTIONS) if (Array.isArray(st.keys[a])) d.keys[a] = [0, 1].map(i => typeof st.keys[a][i] === 'string' ? st.keys[a][i].slice(0, 24) : '');
-    s.earned = int(raw.earned); s.spent = Math.min(int(raw.spent), s.earned); s.xp = int(raw.xp); s.gift = int(raw.gift);
-    const L = raw.login || {}; s.login = { last: typeof L.last === 'string' ? L.last.slice(0, 10) : '', streak: int(L.streak), total: int(L.total) };
-    const F = raw.flair || {}; s.flair = { color: typeof F.color === 'string' ? F.color : '', title: typeof F.title === 'string' ? F.title : '', colors: strList(F.colors), titles: strList(F.titles) };
+    s.earned = int(raw.earned); s.spent = Math.min(int(raw.spent), s.earned); s.xp = int(raw.xp);
     if (raw.acct && typeof raw.acct === 'object' && typeof raw.acct.token === 'string') s.acct = { id: String(raw.acct.id || ''), username: String(raw.acct.username || ''), token: raw.acct.token, admin: !!raw.acct.admin, rev: raw.acct.rev == null ? null : +raw.acct.rev };
-    s.games = raw.games && typeof raw.games === 'object' ? raw.games : {};
+    s.d = raw.d && typeof raw.d === 'object' ? raw.d : {};
     return s;
   }
   try { save = loadSave(JSON.parse(localStorage.getItem(SAVE_KEY) || 'null')); } catch (e) {}
+  // The Night Studios login is shared by every game on the site through this one key. Never set: nobody has logged
+  // in on this browser yet. null: logged out on purpose. Each game still keeps its own progress and currency.
+  const STUDIO_KEY = 'nightstudios-acct';
+  function studioAcct() { try { const raw = localStorage.getItem(STUDIO_KEY); if (raw === null) return undefined; const a = JSON.parse(raw); return a && typeof a.token === 'string' ? a : null; } catch (e) { return null; } }
+  function setStudioAcct(a) { try { localStorage.setItem(STUDIO_KEY, JSON.stringify(a ? { id: String(a.id), username: String(a.username), token: a.token, admin: !!a.admin } : null)); } catch (e) {} }
   let saveBroken = false;
   function saveLocal() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); saveBroken = false; } catch (e) { saveBroken = true; } }
   function persist() { saveLocal(); syncWallet(); if (typeof cloudPush === 'function') cloudPush(); }
 
-  /* ---------- flakes (shared currency) and player level ---------- */
+  /* ---------- coins (this game's currency) and driver level ---------- */
   const coins = () => Math.max(0, save.earned - save.spent);
   function earn(n) { n = int(n); if (n) save.earned += n; return n; }
   function spend(n) { n = int(n); if (n > coins()) return false; save.spent += n; return true; }
@@ -99,7 +103,7 @@
   const levelFor = xp => { let L = 1; while (L < MAX_LEVEL && xp >= XP_AT[L + 1]) L++; return L; };
   const level = () => levelFor(save.xp);
   const levelFrac = () => { const L = level(); return L >= MAX_LEVEL ? 1 : (save.xp - XP_AT[L]) / (XP_AT[L + 1] - XP_AT[L]); };
-  // Every level pays flakes; every fifth level pays a lot more.
+  // Every level pays coins; every fifth level pays a lot more.
   const levelReward = L => L % 5 === 0 ? 150 + L * 20 : 40 + L * 5;
   function addXP(n) {
     const before = level(); save.xp += int(n);
@@ -108,34 +112,6 @@
     return { levels: after - before, level: after, paid };
   }
   function syncWallet() { $('flkChip').textContent = fmt(coins()); $('lvlChip').textContent = 'Lv ' + level(); }
-
-  // Coming back every day: a 7-day ladder that loops. Missing a day starts it over.
-  const LOGIN_PAY = [40, 60, 80, 120, 160, 220, 400];
-  const loginState = () => { rollDay(); const L = save.login, claimed = L.last === dayKey, alive = claimed || L.last === prevDay(dayKey); const streak = alive ? L.streak : 0; return { claimed, streak, next: LOGIN_PAY[streak % 7] }; };
-  function claimLogin() {
-    const s = loginState(); if (s.claimed) return 0;
-    save.login = { last: dayKey, streak: s.streak + 1, total: save.login.total + 1 };
-    earn(s.next); persist(); return s.next;
-  }
-
-  /* ---------- name colors and titles (shown on every board in every game) ---------- */
-  const COLORS = [
-    { id: 'ice', n: 'Glacier', c: '#8fd3ff', cost: 600 }, { id: 'mint', n: 'Aurora', c: '#5cf2b0', cost: 600 },
-    { id: 'flare', n: 'Ember', c: '#ffb347', cost: 900 }, { id: 'violet', n: 'Nebula', c: '#b48cff', cost: 1200 },
-    { id: 'rose', n: 'Redline', c: '#ff5577', cost: 1500 }, { id: 'gold', n: 'Solid Gold', c: '#ffd24a', cost: 2500 },
-    { id: 'rainbow', n: 'Prism', c: 'rainbow', cost: 6000 },
-  ];
-  const TITLES = [
-    { id: 'rookie', n: 'Night Owl', cost: 300 }, { id: 'shred', n: 'Shredder', cost: 600 }, { id: 'powder', n: 'Powder Hound', cost: 900 },
-    { id: 'rail', n: 'Rail Rat', cost: 1200 }, { id: 'ace', n: 'Trick Ace', cost: 1800 }, { id: 'ghost', n: 'Ghost Hunter', cost: 2400 },
-    { id: 'legend', n: 'Summit Legend', lvl: 20 }, { id: 'myth', n: 'Midnight Myth', lvl: 40 }, { id: 'king', n: 'Night King', lvl: 60 },
-  ];
-  const colorById = id => COLORS.find(c => c.id === id), titleById = id => TITLES.find(t => t.id === id);
-  const titleOwned = t => t.lvl ? level() >= t.lvl : save.flair.titles.includes(t.id);
-  function nameHTML(name, colorId, titleId) {
-    const c = colorById(colorId), t = titleById(titleId);
-    return `<b class="${c && c.c === 'rainbow' ? 'nm-rainbow' : ''}"${c && c.c !== 'rainbow' ? ` style="color:${c.c}"` : ''}>${esc(name)}</b>${t ? `<span class="ttl">${esc(t.n)}</span>` : ''}`;
-  }
 
   /* ---------- audio ---------- */
   let ac = null, sfxBus = null, musBus = null, noiseBuf = null;
@@ -177,7 +153,7 @@
   const buzz = ms => { try { if (save.settings.haptics && COARSE && navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
   // Procedural soundtrack. `intensity` (0-5) adds layers; a game sets it as the run heats up.
   const music = { timer: null, step: 0, next: 0, intensity: 0, tense: false };
-  const PROG = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], TENSE = [[57, 60, 64], [58, 62, 65], [57, 60, 63], [56, 59, 63]];
+  const PROG = [[50, 53, 57], [46, 50, 53], [53, 57, 60], [48, 52, 55]], TENSE = [[50, 53, 57], [51, 55, 58], [50, 53, 56], [49, 52, 56]];
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
   function musicStep(t, sp) {
     const lvl = music.intensity, bar = (music.step >> 4) % 4, s = music.step % 16, ch = (music.tense ? TENSE : PROG)[bar];
@@ -192,7 +168,7 @@
   }
   function musicTick() {
     if (!ac || ac.state !== 'running') return;
-    const sp = 60 / (112 + music.intensity * 7) / 4;
+    const sp = 60 / (122 + music.intensity * 6) / 4;
     if (music.next < ac.currentTime) music.next = ac.currentTime + .03;
     while (music.next < ac.currentTime + .18) { musicStep(music.next, sp); music.next += sp; music.step = (music.step + 1) % 64; }
   }

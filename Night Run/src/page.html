@@ -4,23 +4,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="../manifest.webmanifest">
 <meta name="theme-color" content="#0a1020">
-<meta name="description" content="Night Games: arcade games under the northern lights. Start with Night Run, a midnight snowboard run with tricks, rails and a daily course.">
+<meta name="description" content="Night Run: snowboard a midnight mountain. Tricks, rails, a daily course and a Trick Park. A Night Studios game.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Night Games">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Night Run">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Night Games">
-<meta property="og:title" content="Night Games">
-<meta property="og:description" content="Arcade games under the northern lights. Start with Night Run: tricks, rails and a daily course on a midnight mountain.">
-<meta property="og:image" content="og-image.png">
+<meta property="og:site_name" content="Night Studios">
+<meta property="og:title" content="Night Run">
+<meta property="og:description" content="Snowboard a midnight mountain: tricks, rails and a daily course.">
+<meta property="og:image" content="../og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<title>Night Games</title>
+<title>Night Run</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=DM+Mono:wght@400;500&display=swap">
 <style>
@@ -30,7 +30,7 @@
 <body>
 <div class="app" id="app">
   <header class="top" id="top">
-    <button class="brand" id="brandBtn" type="button" aria-label="Night Games home"><span class="moon"></span><b id="brandText">Night Games</b></button>
+    <button class="brand" id="brandBtn" type="button" aria-label="Night Run home"><span class="moon"></span><b id="brandText">Night Run</b></button>
     <div class="wallet">
       <span class="chip lvl" id="lvlChip" title="Player level">Lv 1</span>
       <span class="chip flk" id="flkChip" title="Flakes">0</span>
@@ -53,7 +53,7 @@
 })();
 </script>
 <script>
-if ('serviceWorker' in navigator && location.protocol === 'https:') addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+if ('serviceWorker' in navigator && location.protocol === 'https:') addEventListener('load', () => navigator.serviceWorker.register('../sw.js').catch(() => {}));
 </script>
 </body>
 </html>

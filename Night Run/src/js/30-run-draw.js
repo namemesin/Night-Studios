@@ -313,6 +313,7 @@
     if (G.flareT > 0) { hudBar(LW - 12, ry, 54, G.flareT / flareDur(up('flare')), '#ffb347', 'FLARE'); ry += 11; }
     if (G.magT > 0) { hudBar(LW - 12, ry, 54, G.magT / magnetDur(up('magnet')), '#ff6680', 'MAGNET'); ry += 11; }
     if (G.x2T > 0) { hudBar(LW - 12, ry, 54, G.x2T / 480, '#ffd24a', '2X'); ry += 11; }
+    const achY = ry + 4;
 
     if (G.ghost && gstate === 'run') {
       const gap = Math.round((G.gd - G.px) / 10), gy = PY + G.gd - G.px; ctx.font = '8px ' + F; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(180,140,255,.85)';
@@ -330,11 +331,11 @@
     }
     const tt = G.toasts[0];
     if (tt && tt.ach) {
-      const a = tt.ach, tier = TIERS[a.tier], age = tt.max - tt.life, w = 300, h = 50, x = LW / 2 - w / 2, y = 104 - (1 - Math.min(1, age / 12)) * 160;
-      ctx.globalAlpha = Math.min(1, tt.life / 20); ctx.fillStyle = 'rgba(10,16,32,.94)'; rr(ctx, x, y, w, h, 10); ctx.fill(); ctx.strokeStyle = tier.c; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.fillStyle = tier.c; ctx.beginPath(); ctx.arc(x + 26, y + h / 2, 13, 0, TAU); ctx.fill(); ctx.fillStyle = '#0a1020'; ctx.font = '14px ' + F; ctx.textAlign = 'center'; ctx.fillText('★', x + 26, y + h / 2 + 5);
-      ctx.textAlign = 'left'; ctx.font = '8px ' + M; ctx.fillStyle = tier.c; ctx.fillText(`${tier.n.toUpperCase()} ACHIEVEMENT · +${tier.r} FLAKES`, x + 48, y + 18);
-      ctx.font = '13px ' + F; ctx.fillStyle = '#e8eef7'; ctx.fillText(a.n.toUpperCase(), x + 48, y + 36); ctx.globalAlpha = 1;
+      // a small pill in the top right corner, out of the way of the slope
+      const a = tt.ach, tier = TIERS[a.tier], age = tt.max - tt.life, more = G.toasts.filter(x => x.ach).length - 1;
+      ctx.font = '9px ' + F; const label = a.n.toUpperCase() + (more > 0 ? `  +${more} MORE` : ''), w = Math.min(210, ctx.measureText(label).width + 34), x = LW - 10 - w + (1 - Math.min(1, age / 10)) * 60, y = achY;
+      ctx.globalAlpha = Math.min(.92, tt.life / 20, age / 6); ctx.fillStyle = 'rgba(10,16,32,.9)'; rr(ctx, x, y, w, 20, 10); ctx.fill(); ctx.strokeStyle = tier.c; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = tier.c; ctx.textAlign = 'left'; ctx.fillText('★', x + 8, y + 14); ctx.fillStyle = '#e8eef7'; ctx.save(); ctx.beginPath(); ctx.rect(x + 22, y, w - 28, 20); ctx.clip(); ctx.fillText(label, x + 22, y + 14); ctx.restore(); ctx.globalAlpha = 1;
     } else if (tt) {
       ctx.globalAlpha = Math.min(1, tt.life / 25); ctx.font = '10px ' + F; ctx.textAlign = 'center';
       const w = Math.min(LW - 20, ctx.measureText(tt.text).width + 26), y = LH - 96;
