@@ -52,11 +52,25 @@
     const py = base - 170, p = r(), pl = Math.floor(r() * LANES);
     if (r() < .55) for (let i = 0; i < 5; i++) G.picks.push({ k: 'coin', x: laneX(pl), wy: py + i * 44, hit: false });
     const ol = (pl + 1 + Math.floor(r() * (LANES - 1))) % LANES;
-    if (p < .09 && !G.rush) G.picks.push({ k: 'clock', x: laneX(ol), wy: py + 60, hit: false });
-    else if (p < .17) G.picks.push({ k: 'nitro', x: laneX(ol), wy: py + 60, hit: false });
-    else if (p < .2) G.picks.push({ k: 'shield', x: laneX(ol), wy: py + 60, hit: false });
-    else if (p < .23) G.picks.push({ k: 'magnet', x: laneX(ol), wy: py + 60, hit: false });
+    const pk = p < .09 && !G.rush ? 'clock' : p < .19 ? 'nitro' : p < .25 ? 'shield' : p < .31 ? 'magnet' : '';
+    if (pk) G.picks.push({ k: pk, x: laneX(ol), tx: laneX(ol), wy: py + 60, hit: false });
     G.nextWave = G.px + (G.rush ? 250 : lerp(430, 250, diff)) * (.8 + r() * .4);
+  }
+  // Traffic keeps moving but pickups stand still, so a car can end up parked on one. While a power-up is still well
+  // up the road, it looks ahead to where every car will be when you reach it and slides to the nearest lane that
+  // will be clear. Close up it stays put, so it never jumps out from under you.
+  function placePicks() {
+    const sp = Math.max(G.speed, 6), onc = G.zone >= 4 && !G.rush ? 2 : 0;
+    for (const o of G.picks) {
+      if (o.k === 'coin' || o.hit) continue;
+      const dy = o.wy - G.px;
+      if (dy > 340 && dy < 1100) {
+        const t = dy / sp, clear = l => !G.cars.some(c => !c.hit && (Math.abs(c.x - laneX(l)) < 30 || (c.lc && c.to === l)) && Math.abs(c.wy + c.v * t - o.wy) < c.len / 2 + 46);
+        const cur = Math.round((o.tx - RX - LANE_W / 2) / LANE_W);
+        if (!clear(cur)) for (let d = 1; d < LANES; d++) { const l = [cur - d, cur + d].find(l => l >= 0 && l < LANES && (l >= onc || cur < onc) && clear(l)); if (l != null) { o.tx = laneX(l); break; } }
+      }
+      if (o.x !== o.tx) o.x += clamp(o.tx - o.x, -6, 6);
+    }
   }
   function moveTraffic() {
     const cars = G.cars, onc = G.zone >= 4 && !G.rush ? 2 : 0;
@@ -179,7 +193,7 @@
     // move up the road in small enough slices that nothing can be skipped over
     const slices = Math.ceil(G.speed / 7), ds = G.speed / slices;
     for (let i = 0; i < slices; i++) { G.px += ds; collide(); }
-    moveTraffic();
+    moveTraffic(); placePicks();
     const m = G.px / PXM;
     addScore(G.speed / PXM);
     S.meters = Math.floor(m); S.score = Math.floor(G.score); S.kmh = Math.max(S.kmh, kmhOf(G.speed)); S.clean = Math.max(S.clean, Math.floor(m - G.cleanFrom));

@@ -88,7 +88,7 @@
   /* ---------- account screen ---------- */
   VIEWS.account = () => {
     if (!accountsOn()) return `${backBtn('profile')}<h2>Account</h2><p>Accounts aren't available right now. Your progress is saved on this device.</p>`;
-    if (save.acct) return `${backBtn('profile')}<h2>Account</h2><p>Signed in as <b>${esc(save.acct.username)}</b> with your Night Studios login, the same one in every Night Studios game. Night Run's flakes, unlocks and scores belong to Night Run only.</p>${acctNote ? `<p class="ok">${esc(acctNote)}</p>` : ''}
+    if (save.acct) return `${backBtn('profile')}<h2>Account</h2><p>Signed in as <b>${esc(save.acct.username)}</b> with your Night Studios login, the same one in every Night Studios game. Night Snowboard's flakes, unlocks and scores belong to Night Snowboard only.</p>${acctNote ? `<p class="ok">${esc(acctNote)}</p>` : ''}
       <form class="box" id="passForm" novalidate><label for="oldPass">Change password</label><input id="oldPass" type="password" maxlength="72" autocomplete="current-password" placeholder="Current password"><input id="newPass" type="password" maxlength="72" autocomplete="new-password" placeholder="New password (6+ characters)"><p class="err" role="alert">${esc(authErr)}</p><button class="buy" type="submit" ${authBusy ? 'disabled' : ''}>Change password</button></form>
       <button class="go alt" type="button" data-act="logout" ${authBusy ? 'disabled' : ''}>Log out</button><p class="sub">Logging out signs you out of every Night Studios game on this device and leaves a copy of your progress here.</p>`;
     const reg = authMode === 'register';

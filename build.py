@@ -33,15 +33,17 @@ KIT = ROOT / 'kit'
 PORT = 8000
 # id: used in version tags. path: address on the site. folder: where its source lives.
 # styles: the folder whose styles.css it uses. kit: built on the shared kit?
+# Old addresses that now point somewhere else, so links people saved keep working.
+MOVED = {'run': 'snowboard', 'rally': 'drift'}
 # Every game is always built. Taking a game down is the owner's switch in the admin panel, not a change here.
 APPS = [
-    dict(id='hub', name='Night Studios', path='', folder='Hub', styles='Night Run', kit=False),
-    dict(id='run', name='Night Run', path='run', folder='Night Run', styles='Night Run', kit=False),
-    dict(id='watch', name='Night Watch', path='watch', folder='Night Watch', styles='Night Run', kit=True),
-    dict(id='heist', name='Night Heist', path='heist', folder='Night Heist', styles='Night Run', kit=True),
-    dict(id='keep', name='Night Keep', path='keep', folder='Night Keep', styles='Night Run', kit=True),
-    dict(id='market', name='Night Market', path='market', folder='Night Market', styles='Night Run', kit=True),
-    dict(id='rally', name='Night Rally', path='rally', folder='Night Rally', styles='Night Run', kit=True),
+    dict(id='hub', name='Night Studios', path='', folder='Hub', styles='Night Snowboard', kit=False),
+    dict(id='run', name='Night Snowboard', path='snowboard', folder='Night Snowboard', styles='Night Snowboard', kit=False),
+    dict(id='watch', name='Night Watch', path='watch', folder='Night Watch', styles='Night Snowboard', kit=True),
+    dict(id='heist', name='Night Heist', path='heist', folder='Night Heist', styles='Night Snowboard', kit=True),
+    dict(id='keep', name='Night Keep', path='keep', folder='Night Keep', styles='Night Snowboard', kit=True),
+    dict(id='market', name='Night Market', path='market', folder='Night Market', styles='Night Snowboard', kit=True),
+    dict(id='rally', name='Night Drift', path='drift', folder='Night Drift', styles='Night Snowboard', kit=True),
     dict(id='drive', name='Night Drive', path='drive', folder='Night Drive', styles='Night Drive', kit=False),
 ]
 
@@ -67,6 +69,11 @@ def build():
         target = OUT / app['path']
         target.mkdir(parents=True, exist_ok=True)
         (target / 'index.html').write_bytes(page.replace(b'{{styles}}\n', styles).replace(b'{{game}}\n', code))
+    for old, new in MOVED.items():
+        (OUT / old).mkdir(parents=True, exist_ok=True)
+        (OUT / old / 'index.html').write_text(f'<!doctype html><meta charset="utf-8"><title>Moved</title><meta name="robots" content="noindex">'
+            f'<meta http-equiv="refresh" content="0;url=../{new}/"><script>location.replace("../{new}/"+location.search+location.hash)</script>'
+            f'<p>This game has moved to <a href="../{new}/">its new address</a>.</p>\n')
     (OUT / 'versions.json').write_text(json.dumps({app['id']: 'dev' for app in APPS}) + '\n')
 
 

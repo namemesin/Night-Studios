@@ -1,4 +1,4 @@
-  /* ================= NIGHT RUN: core ================= */
+  /* ================= NIGHT SNOWBOARD: core ================= */
   // Online setup: paste your Supabase project URL and publishable key. Leave empty to keep everything on the device.
   // The server side lives in backend/night-games.sql. Never paste the secret (service_role) key here.
   const SUPABASE_URL = Studio.url, SUPABASE_KEY = Studio.key; // the server address lives in one place: shared/studio.js
@@ -93,7 +93,7 @@
   function saveLocal() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); saveBroken = false; } catch (e) { saveBroken = true; } }
   function persist() { saveLocal(); syncWallet(); if (typeof cloudPush === 'function') cloudPush(); }
 
-  /* ---------- flakes (Night Run's currency) and rider level ---------- */
+  /* ---------- flakes (Night Snowboard's currency) and rider level ---------- */
   const coins = () => Math.max(0, save.earned - save.spent);
   function earn(n) { n = int(n); if (n) save.earned += n; return n; }
   function spend(n) { n = int(n); if (n > coins()) return false; save.spent += n; return true; }
@@ -122,7 +122,7 @@
     earn(s.next); persist(); return s.next;
   }
 
-  /* ---------- name colors and titles (shown on Night Run's leaderboards) ---------- */
+  /* ---------- name colors and titles (shown on Night Snowboard's leaderboards) ---------- */
   const COLORS = [
     { id: 'ice', n: 'Glacier', c: '#8fd3ff', cost: 600 }, { id: 'mint', n: 'Aurora', c: '#5cf2b0', cost: 600 },
     { id: 'flare', n: 'Ember', c: '#ffb347', cost: 900 }, { id: 'violet', n: 'Nebula', c: '#b48cff', cost: 1200 },

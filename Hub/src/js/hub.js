@@ -23,12 +23,12 @@
     if (!r.ok) { const e = new Error((data && data.message) || 'HTTP ' + r.status); e.status = r.status; throw e; }
     return data;
   }
-  // Someone who logged in to Night Run before the studio login existed stays logged in.
+  // Someone who logged in to Night Snowboard before the studio login existed stays logged in.
   if (acct === undefined) { const old = (readJSON('nightgames-save1') || {}).acct; if (old && typeof old.token === 'string') { setStudioAcct(old); acct = studioAcct(); } }
 
   let versions = {};
   const GAMES = [
-    { id: 'run', href: 'run/', cls: '', name: 'Night Run', desc: 'Snowboard a midnight mountain. Spin off kickers, grind rails and skim the trees to build a multiplier.',
+    { id: 'run', href: 'snowboard/', cls: '', name: 'Night Snowboard', desc: 'Snowboard a midnight mountain. Spin off kickers, grind rails and skim the trees to build a multiplier.',
       meta: () => { const r = ((readJSON('nightgames-save1') || {}).games || {}).run || {}; return [r.best ? 'Your best ' + fmt(r.best) : 'Not played yet', 'Free Ride · Daily Course · Trick Park']; } },
     { id: 'watch', href: 'watch/', cls: ' watch', name: 'Night Watch', desc: 'Keep the campfire alive until sunrise. Build lanterns, brambles, flares and beacons to hold back the shades.',
       meta: () => { const d = (readJSON('nightwatch-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'Keep Watch · Daily Watch']; } },
@@ -40,7 +40,7 @@
       meta: () => { const d = (readJSON('nightkeep-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'Six maps · Daily Siege']; } },
     { id: 'market', href: 'market/', cls: ' market', name: 'Night Market', desc: 'Run a stall at the night bazaar. Buy low, sell high, chase the rumors and make the rent before every dawn.',
       meta: () => { const d = (readJSON('nightmarket-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'Open Market · Daily Market']; } },
-    { id: 'rally', href: 'rally/', cls: ' rally', name: 'Night Rally', desc: 'Top-down drift racing. Slide through the corners for a boost, and race your own ghost and the daily best.',
+    { id: 'rally', href: 'drift/', cls: ' rally', name: 'Night Drift', desc: 'Top-down drift racing. Slide through the corners for a boost, and race your own ghost and the daily best.',
       meta: () => { const d = (readJSON('nightrally-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'Moonlight Circuit · Daily Stage']; } },
   ];
   function render() {

@@ -1,4 +1,4 @@
-  /* ================= NIGHT RALLY: the game ================= */
+  /* ================= NIGHT DRIFT: the game ================= */
   // A track is a closed loop of NS points drawn from a seeded generator, so the Daily Stage is the same road for
   // everyone, and every track is scaled to the same length so times can be compared. Logic runs at a fixed 60 steps
   // a second. The view follows the car and turns with the way it is travelling, so "left" is always the car's left.
@@ -259,7 +259,7 @@
       if (!gh || G.t < gh.t) ghostSave(G.mode, G.key, G.t, G.laps, sentGhost);
       if (gh && G.t < gh.t) S.wins = 1;
       line = `Three laps of ${where} in <b>${tf(G.t)}</b>.` + (!gh ? ' That run is now your ghost.' : G.t < gh.t ? ` You beat your ghost by <b>${tf(gh.t - G.t)}</b> s, so this run is the new one.` : ` Your ghost was ${tf(G.t - gh.t)} s quicker.`) + (G.pace ? ` ${G.mode === 'daily' ? "Today's best" : 'The record'} is ${tf(G.pace.t)} by ${esc(G.pace.name)}.` : '');
-    } else line = `Time ran out on <b>lap ${Math.min(LAPS, c.lap + 1)}</b> of ${where}. A rally is called off after two minutes.`;
+    } else line = `Time ran out on <b>lap ${Math.min(LAPS, c.lap + 1)}</b> of ${where}. A race is called off after two minutes.`;
     const lapRows = G.laps.map((t, i) => ['Lap ' + (i + 1), tf(t - (i ? G.laps[i - 1] : 0))]);
     endRun({ mode: G.mode, score, stats: S, secs: G.t / 60, coins: done ? score / 170 + S.boosts * 1.5 + S.clean * 6 : c.lap * 8, xp: done ? score / 50 + 36 : 20 + c.lap * 20, title: done ? 'Finished' : 'Out of time', ach: G.newAch, mis: G.newMis, line,
       rows: [...lapRows, ['Drifted', Math.round(S.drift) + ' m'], ['Longest drift', Math.round(S.long) + ' m'], ['Boosts', S.boosts], ['Clean laps', S.clean]], note: done ? tf(G.t) : 'Did not finish',

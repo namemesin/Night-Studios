@@ -66,14 +66,14 @@
   VIEWS.account = () => {
     if (!accountsOn()) return `${backBtn('profile')}<h2>Account</h2><p>Logins aren't available right now. Your progress is saved on this device.</p>`;
     if (save.acct) return `${backBtn('profile')}<h2>Account</h2><p>Signed in as <b>${esc(save.acct.username)}</b>. This is your Night Studios login, the same one as in the studio's other games. Your ${GAME.name} progress, coins and scores belong to this game only.</p>
-      <button class="go alt" type="button" data-act="logout" ${authBusy ? 'disabled' : ''}>Log out</button><p class="sub">Logging out signs you out of every Night Studios game on this device and leaves a copy of your progress here. To change your password, use the account screen in Night Run.</p>`;
+      <button class="go alt" type="button" data-act="logout" ${authBusy ? 'disabled' : ''}>Log out</button><p class="sub">Logging out signs you out of every Night Studios game on this device and leaves a copy of your progress here. To change your password, use the account screen in Night Snowboard.</p>`;
     const reg = authMode === 'register';
     return `${backBtn('profile')}<h2>${reg ? 'Create a Night Studios login' : 'Log in with Night Studios'}</h2>
       <div class="tabs"><button type="button" data-act="auth:login" aria-pressed="${!reg}">I have a login</button><button type="button" data-act="auth:register" aria-pressed="${reg}">New login</button></div>
       <form class="box" id="authForm" novalidate><label for="uname">Username</label><input id="uname" type="text" maxlength="16" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="NightOwl" value="${esc(save.name)}">
         <label for="upass">Password</label><input id="upass" type="password" maxlength="72" autocomplete="${reg ? 'new-password' : 'current-password'}" placeholder="${reg ? 'At least 6 characters' : 'Your password'}">
         <p class="err" role="alert">${esc(authErr)}</p><button class="go" type="submit" ${authBusy ? 'disabled' : ''}>${authBusy ? 'One sec…' : reg ? 'Create login' : 'Log in'}</button>
-        <p class="sub">${reg ? "One login works in every Night Studios game. Each game keeps its own progress and currency. There's no password reset, so pick one you'll remember." : 'Use the same username and password as in Night Run. What you have earned on this device joins your account.'}</p></form>`;
+        <p class="sub">${reg ? "One login works in every Night Studios game. Each game keeps its own progress and currency. There's no password reset, so pick one you'll remember." : 'Use the same username and password as in Night Snowboard. What you have earned on this device joins your account.'}</p></form>`;
   };
   ACTIONS.auth = m => { authMode = m === 'register' ? 'register' : 'login'; authErr = ''; render(); };
   FORMS.authForm = async () => {

@@ -1,7 +1,7 @@
   /* ================= NIGHT MARKET: the game ================= */
-  // Every stall's price is worked out twice a second from a seeded generator and never depends on what the player
+  // Every stall's price is worked out every second and a half from a seeded generator and never depends on what the player
   // does, so the Daily Market has the same prices and rumors for everyone. Logic runs at a fixed 60 steps a second.
-  const LW = 400, NIGHT = 40 * 60, TICK = 30, DAWN = 170, HIST = 44, TOPY = 100, FOOT = 74;
+  const LW = 400, NIGHT = 60 * 60, TICK = 90, DAWN = 170, HIST = 36, TOPY = 100, FOOT = 74;
   let SC = 1, LH = 600, ROWH = 52;
   resizeHooks.push(() => { SC = W / LW; LH = H / SC; ROWH = clamp(Math.floor((LH - TOPY - FOOT) / GOODS.length), 30, 60); });
   let G = null, hold = null;
@@ -19,23 +19,23 @@
   const eventOn = i => G.evs.find(e => e.i === i && G.nt >= e.at && G.nt < e.at + e.len);
 
   /* ---------- prices ---------- */
-  function rollMood(g) { g.moodT = 10 + Math.floor(G.rand() * 18); g.mood = Math.exp((G.rand() + G.rand() - 1) * .5); }
+  function rollMood(g) { g.moodT = 5 + Math.floor(G.rand() * 8); g.mood = Math.exp((G.rand() + G.rand() - 1) * .5); }
   function tickPrices() {
     G.px.forEach((g, i) => {
       const it = GOODS[i], e = eventOn(i);
       if (--g.moodT <= 0) rollMood(g);
-      g.f += (it.p * (e ? e.m : g.mood) - g.f) * (e ? .3 : .09) + g.f * .035 * (G.rand() + G.rand() - 1);
+      g.f += (it.p * (e ? e.m : g.mood) - g.f) * (e ? .4 : .12) + g.f * .03 * (G.rand() + G.rand() - 1);
       g.f = clamp(g.f, it.p * .3, it.p * 3.2); g.p = Math.max(1, Math.round(g.f));
       g.hist.push(g.p); if (g.hist.length > HIST) g.hist.shift();
     });
   }
-  // Two or three rumors a night, each about a different stall: a boom or a crash that lasts seven seconds.
+  // Two or three rumors a night, each about a different stall: a boom or a crash that lasts ten seconds.
   function planNight() {
     const open = GOODS.map((_, i) => i).filter(isOpen), n = Math.min(open.length, G.night > 3 ? 3 : 2), from = 8 * 60, span = (NIGHT - 18 * 60) / n;
     G.evs = [];
     for (let k = 0; k < n; k++) {
       const i = open.splice(Math.floor(G.rand() * open.length), 1)[0], boom = G.rand() < .6;
-      G.evs.push({ i, boom, at: Math.round(from + span * (k + G.rand() * .6)), len: 7 * 60, m: boom ? 1.9 + G.rand() * .7 : .38 + G.rand() * .14, told: false, hit: false, cashed: false });
+      G.evs.push({ i, boom, at: Math.round(from + span * (k + G.rand() * .6)), len: 10 * 60, m: boom ? 1.9 + G.rand() * .7 : .38 + G.rand() * .14, told: false, hit: false, cashed: false });
     }
   }
   function newGame(mode, demo) {
@@ -287,4 +287,4 @@
   addEventListener('resize', () => { resize(); if (G && gstate !== 'run' && gstate !== 'ending') drawGame(performance.now()); });
   fixEquipped(); resize(); newGame('free', true); syncWallet();
   show('home'); lastFrame = performance.now(); requestAnimationFrame(frame); onlineBoot();
-  if (DEV) window.NM = { get G() { return G; }, get save() { return save; }, get state() { return gstate; }, startRun, step, show, trade, GOODS, rentFor, sellPrice, worth, held, cap, NIGHT };
+  if (DEV) window.NM = { get G() { return G; }, get save() { return save; }, get state() { return gstate; }, startRun, step, show, trade, GOODS, rentFor, sellPrice, worth, held, cap, NIGHT, TICK };

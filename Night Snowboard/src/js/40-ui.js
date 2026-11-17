@@ -4,7 +4,7 @@
   const progBar = (f, cls = '') => `<div class="prog ${cls}"><i style="width:${(clamp(f, 0, 1) * 100).toFixed(0)}%"></i></div>`;
   const stat = (label, v) => `<div class="stat"><span>${label}</span><b>${v}</b></div>`;
 
-  // The site's home page (one folder up) is where you pick a game. This page's own home is the Night Run menu.
+  // The site's home page (one folder up) is where you pick a game. This page's own home is the Night Snowboard menu.
   VIEWS.hub = () => VIEWS['run-home']();
   function checkinHTML() {
     const L = loginState();
@@ -17,11 +17,11 @@
   VIEWS.profile = () => {
     const L = R.life, hrs = L.secs >= 3600 ? (L.secs / 3600).toFixed(1) + ' h' : Math.round(L.secs / 60) + ' min';
     return `${backBtn()}<h2>Profile</h2>
-      ${save.acct ? `<p>Signed in as <b>${esc(save.acct.username)}</b>. This is your Night Studios login. Your Night Run progress follows it to any device.</p><button class="go alt" type="button" data-act="go:account">Account</button>`
+      ${save.acct ? `<p>Signed in as <b>${esc(save.acct.username)}</b>. This is your Night Studios login. Your Night Snowboard progress follows it to any device.</p><button class="go alt" type="button" data-act="go:account">Account</button>`
         : `<form class="box" id="nameForm" novalidate><label for="uname">Your name on the leaderboards</label><div class="inline"><input id="uname" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="PowderHound" value="${esc(save.name)}"><button class="buy" type="submit">Save</button></div><p class="err" id="nameErr" role="alert"></p></form>
            ${typeof accountsOn === 'function' && accountsOn() ? `<button class="go violet" type="button" data-act="go:account">Create an account or log in<small>Keep your progress on every device and post scores</small></button>` : ''}`}
       <div class="box"><h3>Rider <b>Level ${level()}</b></h3><div class="stats">${stat('Flakes earned', fmt(save.earned))}${stat('Check-ins', fmt(save.login.total))}${stat('Best streak', save.login.streak + ' d')}</div></div>
-      <div class="box"><h3>Night Run</h3><div class="stats">${stat('Best score', fmt(R.best))}${stat('Park best', fmt(R.bestPark))}${stat('Runs', fmt(L.runs))}${stat('Distance', L.meters >= 10000 ? (L.meters / 1000).toFixed(1) + ' km' : fmt(L.meters) + ' m')}${stat('Time riding', hrs)}${stat('Tricks', fmt(L.tricks))}${stat('Best combo', 'x' + R.bs.maxCombo)}${stat('Biggest spin', R.bs.maxSpin * 180 + '°')}${stat('Achievements', achCount() + '/' + ACH.length)}</div></div>
+      <div class="box"><h3>Night Snowboard</h3><div class="stats">${stat('Best score', fmt(R.best))}${stat('Park best', fmt(R.bestPark))}${stat('Runs', fmt(L.runs))}${stat('Distance', L.meters >= 10000 ? (L.meters / 1000).toFixed(1) + ' km' : fmt(L.meters) + ' m')}${stat('Time riding', hrs)}${stat('Tricks', fmt(L.tricks))}${stat('Best combo', 'x' + R.bs.maxCombo)}${stat('Biggest spin', R.bs.maxSpin * 180 + '°')}${stat('Achievements', achCount() + '/' + ACH.length)}</div></div>
       ${armBtn('wipe', save.acct ? 'Log out and erase this device' : 'Erase all progress on this device', 'Tap again: this device is wiped')}`;
   };
   FORMS.nameForm = () => {
@@ -35,7 +35,7 @@
     const F = save.flair;
     const cols = COLORS.map(c => { const own = F.colors.includes(c.id), on = F.color === c.id; return `<div class="cos${on ? ' on' : ''}"><div class="pic" style="${c.c === 'rainbow' ? 'background:linear-gradient(90deg,#ff5577,#ffd24a,#5cf2b0,#4aa3ff,#b48cff)' : 'background:' + c.c}"></div><b>${c.n}</b><button type="button" class="buy${on ? ' on' : ''}" data-act="color:${c.id}" ${!own && coins() < c.cost ? 'disabled' : ''}>${on ? 'Take off' : own ? 'Use' : fmt(c.cost)}</button></div>`; }).join('');
     const tits = TITLES.map(t => { const own = titleOwned(t), on = F.title === t.id; return `<div class="item box"><div><h4>${esc(t.n)}</h4><p>${t.lvl ? `Reach level ${t.lvl}` : own ? 'Owned' : fmt(t.cost) + ' flakes'}</p></div><button type="button" class="buy${on ? ' on' : ''}" data-act="title:${t.id}" ${!own && (t.lvl || coins() < t.cost) ? 'disabled' : ''}>${on ? 'Take off' : own ? 'Use' : t.lvl ? 'Locked' : 'Buy'}</button></div>`; }).join('');
-    return `${backBtn()}<h2>Flair</h2><p>How your name looks on Night Run's leaderboards.</p>
+    return `${backBtn()}<h2>Flair</h2><p>How your name looks on Night Snowboard's leaderboards.</p>
       <div class="box" style="text-align:center;font-size:18px">${nameHTML(playerName(), F.color, F.title)}</div>
       <h3>Name colors</h3><div class="grid">${cols}</div><h3>Titles</h3><div class="list">${tits}</div>`;
   };
@@ -63,7 +63,7 @@
   });
   panel.addEventListener('change', e => { if (e.target.id === 'volSfx') { initAudio(); applyVolumes(); chime([880, 1320]); } });
 
-  /* ---------- Night Run ---------- */
+  /* ---------- Night Snowboard ---------- */
   const MODES = { free: ['Free Ride', 'Endless mountain'], daily: ['Daily Course', 'Same course for everyone'], park: ['Trick Park', '75 seconds, nothing to hit'] };
   function missionsHTML() {
     const ms = curMissions(), M = R.missions, n = M.done.filter(Boolean).length;
@@ -90,7 +90,7 @@
         <button type="button" data-act="go:profile">Profile<b>${esc(playerName())}</b></button><button type="button" data-act="go:flair">Flair<b>Colors &amp; titles</b></button>${Studio.admin ? `<button type="button" data-act="studioadmin">Admin<b>${Studio.owner ? 'Owner tools' : 'Commands &amp; data'}</b></button>` : `<button type="button" data-act="go:settings">Settings<b>Sound &amp; keys</b></button>`}</div>
       ${checkinHTML()}${missionsHTML()}${nextAchHTML()}
       ${IS_IOS && TOP_LEVEL && !STANDALONE ? `<p class="sub">Play it like an app: tap Share in Safari, then <b>Add to Home Screen</b>.</p>` : ''}${saveBroken ? `<p class="err">This browser is blocking storage, so progress won't be kept after you close the page.</p>` : ''}
-      <p class="ver">Night Run · a Night Studios game · version ${esc(APP_VERSION)}</p>`;
+      <p class="ver">Night Snowboard · a Night Studios game · version ${esc(APP_VERSION)}</p>`;
   };
   ACTIONS.play = m => { pendingGhost = null; startRun(m); };
   ACTIONS.boost = id => { const b = BOOSTS.find(x => x.id === id); if (!b) return; if (R.kit[id]) { R.kit[id] = false; save.spent = Math.max(0, save.spent - b.cost); sfx.equip(); } else { if (!spend(b.cost)) return sfx.deny(); R.kit[id] = true; sfx.buy(); } persist(); render(); };
@@ -120,7 +120,7 @@
   ACTIONS.share = () => {
     const r = lastRun; if (!r) return;
     const url = TOP_LEVEL ? location.origin + location.pathname : '';
-    const text = r.mode === 'daily' ? `I scored ${fmt(r.s)} on today's Night Run course. Same mountain for everyone. Beat it before midnight.` : r.mode === 'park' ? `${fmt(r.s)} in 75 seconds of Night Run's Trick Park. Your turn.` : `I just scored ${fmt(r.s)} on Night Run. Bet you can't make it past ${ZONES[Math.min(r.z + 1, ZONES.length - 1)].name}.`;
+    const text = r.mode === 'daily' ? `I scored ${fmt(r.s)} on today's Night Snowboard course. Same mountain for everyone. Beat it before midnight.` : r.mode === 'park' ? `${fmt(r.s)} in 75 seconds of Night Snowboard's Trick Park. Your turn.` : `I just scored ${fmt(r.s)} on Night Snowboard. Bet you can't make it past ${ZONES[Math.min(r.z + 1, ZONES.length - 1)].name}.`;
     const full = url ? text + ' ' + url : text, box = $('shareMsg');
     const fallback = () => { if (box) box.innerHTML = `<p class="sub">Copy this and send it:</p><input type="text" readonly value="${esc(full)}">`; };
     if (navigator.share && COARSE && TOP_LEVEL) navigator.share(url ? { text, url } : { text }).catch(e => { if (!e || e.name !== 'AbortError') fallback(); });

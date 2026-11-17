@@ -1,4 +1,4 @@
-  /* ================= NIGHT RUN: the game ================= */
+  /* ================= NIGHT SNOWBOARD: the game ================= */
   // The mountain is 400 units wide on every screen, and the course is laid out by distance, not by time or screen
   // size, so a daily course is the same on a phone and a desktop. Logic runs at a fixed 60 steps a second.
   const LW = 400, AHEAD = 950, PARK_TICKS = 75 * 60, COMBO_MAX = 50;

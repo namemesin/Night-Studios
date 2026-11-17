@@ -1,4 +1,4 @@
-  /* ================= NIGHT RUN: content and progress ================= */
+  /* ================= NIGHT SNOWBOARD: content and progress ================= */
   const ZONES = [
     { at: 0,    name: 'Bunny Slope',   color: '#3ddc84', shape: 'circle' },
     { at: 300,  name: 'Blue Ridge',    color: '#4aa3ff', shape: 'square' },

@@ -1,4 +1,4 @@
-  /* ================= NIGHT RALLY: what the game is ================= */
+  /* ================= NIGHT DRIFT: what the game is ================= */
   // A top-down time trial. Three laps of a circuit at night; the car drives itself and you steer. Holding Drift
   // through a corner turns tighter and charges a boost that fires when you let go. Your best run on each track is
   // kept as a ghost to race. The shared kit (in kit/) handles saving, coins, levels, login, leaderboards and the
@@ -11,16 +11,16 @@
   const tf = steps => { const s = Math.max(0, steps) / 60; return s >= 60 ? Math.floor(s / 60) + ':' + (s % 60).toFixed(2).padStart(5, '0') : s.toFixed(2); };
   const lapText = lapx => lapx > 0 ? (60 - lapx / 100).toFixed(2) + ' s' : 'None yet';
   const GAME = {
-    id: 'rally', name: 'Night Rally', saveKey: 'nightrally-save1',
+    id: 'rally', name: 'Night Drift', saveKey: 'nightrally-save1',
     keys: { left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'], drift: ['Space', 'ShiftLeft'], brake: ['ArrowDown', 'KeyS'], pause: ['KeyP', 'Escape'] },
     keyActions: [['left', 'Steer left'], ['right', 'Steer right'], ['drift', 'Drift'], ['brake', 'Brake'], ['pause', 'Pause']],
     modes: [{ id: 'free', name: 'Moonlight Circuit', sub: 'Three laps against your ghost' }, { id: 'daily', name: 'Daily Stage', sub: 'Same track for everyone', daily: true }],
     submitFn: 'ng_rally_submit', submitMore: () => ({ p_ghost: sentGhost }), // a finished run is posted with its replay (see backend/night-studios-rally.sql)
     boardNote: r => r.meta && r.meta.t ? ` <span class="sub">· ${tf(int(r.meta.t) * .6)}</span>` : '',
     pauseLine: () => `<b>${tf(G.t)}</b> on the clock · lap ${Math.min(LAPS, G.c.lap + 1)} of ${LAPS}`,
-    shareText: r => !r.meta.t ? `I ran out of time on Night Rally. See if you can finish three laps.` : r.mode === 'daily' ? `I drove today's Night Rally stage in ${tf(r.meta.t * .6)}. Same track for everyone. Beat it.` : `I lapped the Moonlight Circuit three times in ${tf(r.meta.t * .6)} on Night Rally. Your turn.`,
+    shareText: r => !r.meta.t ? `I ran out of time on Night Drift. See if you can finish three laps.` : r.mode === 'daily' ? `I drove today's Night Drift stage in ${tf(r.meta.t * .6)}. Same track for everyone. Beat it.` : `I lapped the Moonlight Circuit three times in ${tf(r.meta.t * .6)} on Night Drift. Your turn.`,
     profileStats: () => [['Best lap', lapText(D.bs.lapx)], ['Drifted', fmt(D.life.drift) + ' m'], ['Ghosts beaten', fmt(D.life.wins)]],
-    help: () => `<div class="box"><h3>The rally</h3><p>Three laps, as fast as you can. The car <b>drives itself</b>; you steer. A faster time is a higher score.</p></div>
+    help: () => `<div class="box"><h3>The race</h3><p>Three laps, as fast as you can. The car <b>drives itself</b>; you steer. A faster time is a higher score.</p></div>
       <div class="box"><h3>Steer</h3><p>${COARSE ? 'Hold the <b>left</b> and <b>right</b> arrows at the bottom left of the screen.' : `Steer with <kbd>${esc(keyFor('left'))}</kbd> and <kbd>${esc(keyFor('right'))}</kbd>. <kbd>${esc(keyFor('brake'))}</kbd> brakes.`} Left and right are the car's own left and right, and the view turns with the road.</p></div>
       <div class="box"><h3>Drift</h3><p>${COARSE ? 'Hold <b>Drift</b> at the bottom right' : `Hold <kbd>${esc(keyFor('drift'))}</kbd>`} while steering into a corner. The car slides and turns much tighter. The ring around it fills <b style="color:#6fd3ff">blue</b>, <b style="color:#ffb347">orange</b>, then <b style="color:#ff5cf0">pink</b>. Let go and you get a <b>boost</b>, bigger for each color.</p>
         <p>Tight corners can't be taken flat out without a drift, and a long drift pays for itself on the next straight.</p></div>
@@ -44,34 +44,34 @@
     { id: 'spool', n: 'Quick Spool', cost: [200, 500, 1000], d: l => l ? `The drift ring fills ${l * 8}% faster` : 'The drift ring fills faster' },
     { id: 'turbo', n: 'Big Turbo', cost: [250, 600, 1300], d: l => l ? `Boosts last ${l * 12}% longer` : 'Longer boosts' },
     { id: 'mud', n: 'Rally Suspension', cost: [150, 400, 900], d: l => l ? `Grass slows you ${l * 12}% less` : 'Grass slows you less' },
-    { id: 'lucky', n: 'Lucky Coin', cost: [300, 700, 1400, 2400, 4000], d: l => l ? `+${l * 10}% coins from every rally` : 'More coins from every rally' },
+    { id: 'lucky', n: 'Lucky Coin', cost: [300, 700, 1400, 2400, 4000], d: l => l ? `+${l * 10}% coins from every race` : 'More coins from every race' },
   ];
   // laps: laps finished. drift: metres spent drifting. long: the longest single drift, in metres. boosts: drift boosts
   // fired. clean: laps with no grass. wins: 1 when the run beat the ghost. lapx: best lap as (60 s - lap time) x 100.
   const RUN_STATS = ['score', 'laps', 'drift', 'long', 'boosts', 'clean', 'wins', 'lapx', 'daily'];
   const LIFE_KEYS = ['laps', 'drift', 'boosts', 'clean', 'wins'];
   const FAMILIES = [
-    ['The clock', 'score', 'score', 'run', 'Score {n} in one rally', [[2000, 'b', 'Made It Home'], [11000, 'b', 'Finding the Line'], [13000, 's', 'Getting Quick'], [14600, 'g', 'Quick Hands'], [15800, 'p', 'Stage Winner'], [16800, 'm', 'Untouchable']]],
+    ['The clock', 'score', 'score', 'run', 'Score {n} in one race', [[2000, 'b', 'Made It Home'], [11000, 'b', 'Finding the Line'], [13000, 's', 'Getting Quick'], [14600, 'g', 'Quick Hands'], [15800, 'p', 'Stage Winner'], [16800, 'm', 'Untouchable']]],
     ['The clock', 'lapsL', 'laps', 'life', 'Finish {n} laps in total', [[30, 'b', 'Getting the Line'], [300, 's', 'Knows Every Bump'], [1500, 'g', 'Part of the Tarmac']]],
-    ['The clock', 'clean', 'clean', 'run', 'Drive {n} clean lap{s} in one rally', [[1, 'b', 'Tidy'], [2, 's', 'Tidier'], [3, 'g', 'Never Touched the Grass']]],
+    ['The clock', 'clean', 'clean', 'run', 'Drive {n} clean lap{s} in one race', [[1, 'b', 'Tidy'], [2, 's', 'Tidier'], [3, 'g', 'Never Touched the Grass']]],
     ['The clock', 'cleanL', 'clean', 'life', 'Drive {n} clean laps in total', [[15, 'b', 'Neat Driver'], [150, 's', 'Smooth Operator'], [750, 'g', 'Metronome']]],
-    ['Sideways', 'drift', 'drift', 'run', 'Drift {n} metres in one rally', [[100, 'b', 'Tail Out'], [250, 's', 'Loose Surface'], [400, 'g', 'Mostly Sideways'], [550, 'p', 'Forwards Is Optional']]],
+    ['Sideways', 'drift', 'drift', 'run', 'Drift {n} metres in one race', [[100, 'b', 'Tail Out'], [250, 's', 'Loose Surface'], [400, 'g', 'Mostly Sideways'], [550, 'p', 'Forwards Is Optional']]],
     ['Sideways', 'driftL', 'drift', 'life', 'Drift {n} metres in total', [[2000, 'b', 'Tyre Bill'], [20000, 's', 'Rubber Budget'], [100000, 'g', 'Tyre Sponsor Wanted']]],
     ['Sideways', 'long', 'long', 'run', 'Hold one drift for {n} metres', [[20, 'b', 'Long Slide'], [35, 's', 'Still Sliding'], [50, 'g', 'One Long Corner'], [70, 'p', 'Round and Round']]],
-    ['Sideways', 'boosts', 'boosts', 'run', 'Fire {n} drift boost{s} in one rally', [[3, 'b', 'Lit'], [8, 's', 'On the Boil'], [14, 'g', 'Anti-Lag'], [20, 'p', 'Flames Out the Back']]],
+    ['Sideways', 'boosts', 'boosts', 'run', 'Fire {n} drift boost{s} in one race', [[3, 'b', 'Lit'], [8, 's', 'On the Boil'], [14, 'g', 'Anti-Lag'], [20, 'p', 'Flames Out the Back']]],
     ['Sideways', 'boostsL', 'boosts', 'life', 'Fire {n} drift boosts in total', [[50, 'b', 'Warm Turbo'], [500, 's', 'Hot Turbo'], [3000, 'g', 'Glowing Turbo']]],
     ['Ghosts', 'winsL', 'wins', 'life', 'Beat your own ghost {n} time{s}', [[1, 'b', 'Better Than Yesterday'], [10, 's', 'Chasing Yourself'], [40, 'g', 'Your Own Worst Rival']]],
     ['Daily', 'daily', 'daily', 'run', 'Score {n} on the Daily Stage', [[11000, 'b', 'Day Tripper'], [13000, 's', 'Daily Driver'], [15000, 'g', 'Daily Legend']]],
     ['Daily', 'ddays', 'dailyDays', 'life', 'Drive the Daily Stage on {n} day{s}', [[1, 'b', 'Clocked In'], [7, 's', 'Week of Stages'], [30, 'g', 'Month on the Road']]],
-    ['Career', 'runs', 'runs', 'life', 'Take the start {n} time{s}', [[1, 'b', 'First Rally'], [25, 's', 'Regular Entrant'], [100, 'g', 'Old Hand']]],
+    ['Career', 'runs', 'runs', 'life', 'Take the start {n} time{s}', [[1, 'b', 'First Race'], [25, 's', 'Regular Entrant'], [100, 'g', 'Old Hand']]],
   ];
   const EXTRA_ACH = [
     { id: 'lap-17', cat: 'The clock', n: 'Hot Lap', tier: 's', t: 'Finish a lap in under 17 seconds', f: () => D.bs.lapx >= 4300 },
     { id: 'lap-155', cat: 'The clock', n: 'Flying Lap', tier: 'p', t: 'Finish a lap in under 15.5 seconds', f: () => D.bs.lapx >= 4450 },
   ];
   const MISSION_POOL = [
-    ['run', 'score', 'Score {n} in one rally', 9000, 12500, 14800], ['run', 'drift', 'Drift {n} metres in one rally', 80, 200, 350],
-    ['run', 'boosts', 'Fire {n} drift boosts in one rally', 3, 7, 12], ['run', 'clean', 'Drive {n} clean laps in one rally', 1, 2, 3],
+    ['run', 'score', 'Score {n} in one race', 9000, 12500, 14800], ['run', 'drift', 'Drift {n} metres in one race', 80, 200, 350],
+    ['run', 'boosts', 'Fire {n} drift boosts in one race', 3, 7, 12], ['run', 'clean', 'Drive {n} clean laps in one race', 1, 2, 3],
     ['run', 'long', 'Hold one drift for {n} metres', 15, 30, 45], ['day', 'runs', 'Finish {n} rallies today', 2, 4, 6],
     ['day', 'laps', 'Finish {n} laps today', 6, 12, 21], ['day', 'drift', 'Drift {n} metres today', 250, 600, 1200],
   ];

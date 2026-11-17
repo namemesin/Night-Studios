@@ -1,4 +1,4 @@
-  /* ================= NIGHT RUN: drawing ================= */
+  /* ================= NIGHT SNOWBOARD: drawing ================= */
   // Things drawn many times a frame (glows, trees, rocks) are painted once into small off-screen canvases and stamped.
   const sprites = {};
   function sprite(key, w, h, paint) {
