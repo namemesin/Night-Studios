@@ -122,6 +122,7 @@
     const mine = b.me && b.me.rank > b.top.length ? `<ol class="lb" style="margin-top:6px"><li class="me"><span class="n">${b.me.rank}</span><span><b>${esc(playerName())}</b></span><b>${fmt(b.me.score)}</b></li></ol>` : '';
     return `<div class="box"><h3>${title} <b>${b.count > b.top.length ? `Top ${b.top.length} of ${fmt(b.count)}` : b.count === 1 ? '1 player' : fmt(b.count) + ' players'}</b></h3>${rows ? `<ol class="lb">${rows}</ol>${mine}` : `<p>Nobody has posted here yet. Be the first.</p>`}${save.acct ? '' : `<p class="sub" style="margin-top:8px">Log in from your profile to post your scores.</p>`}</div>`;
   }
+  // A game can post through its own server function (GAME.submitFn) and send more with the score (GAME.submitMore).
   // A run ticket: asked for when a run starts, sent with its score. The server only accepts a score for a run it saw start.
   let runTok = null;
   function armRun(mode) { runTok = save.acct && accountsOn() ? Studio.runStart(GAME.id, mode, (GAME.modes.find(m => m.id === mode) || {}).daily ? dayKey : '') : null; }
@@ -130,7 +131,7 @@
     if (!save.acct) { r.post = 'Log in with Night Studios from your profile to post scores.'; return; }
     const tab = r.mode; r.post = 'Posting your score…';
     const tok = save.acct.token;
-    Promise.resolve(runTok).then(run => rpc('ng_submit', { p_token: tok, p_game: GAME.id, p_board: tab, p_period: (GAME.modes.find(m => m.id === tab) || {}).daily ? dayKey : '', p_score: r.s, p_meta: Object.assign({ secs: r.secs, v: APP_VERSION }, r.meta || {}) , p_run: run }))
+    Promise.resolve(runTok).then(run => rpc(GAME.submitFn || 'ng_submit', Object.assign({ p_token: tok, p_game: GAME.id, p_board: tab, p_period: (GAME.modes.find(m => m.id === tab) || {}).daily ? dayKey : '', p_score: r.s, p_meta: Object.assign({ secs: r.secs, v: APP_VERSION }, r.meta || {}) , p_run: run }, GAME.submitMore ? GAME.submitMore(r) : null)))
       .then(res => { r.post = res && res.error ? esc(res.error) : res && res.rank ? `${res.best ? 'New personal best on the board' : 'Your best still stands'}: <b>#${res.rank}</b> of ${fmt(res.count)} on ${esc((GAME.modes.find(m => m.id === tab) || GAME.modes[0]).name)}.` : ''; const b = boards[boardKey(tab)]; if (b) b.at = 0; boardLoad(tab, true); })
       .catch(e => { if (loggedOut(e)) return signedOut("You were logged out, so that run wasn't posted."); r.post = "Couldn't reach the leaderboard, so this run wasn't posted."; })
       .finally(() => { if (lastRun === r && view === 'over' && !overlay.hidden) render(); });

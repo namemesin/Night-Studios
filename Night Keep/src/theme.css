@@ -57,3 +57,5 @@
 #info canvas.ico{height:20px;width:auto;image-rendering:pixelated;vertical-align:middle;margin:0 2px 0 8px}
 @media (max-width:600px){#pop{position:fixed;left:0;right:0;top:auto;bottom:0;width:auto;z-index:4;border-radius:10px 10px 0 0}.kbar{gap:4px;padding:4px}.kstat{padding:3px 6px}}
 @media (pointer:coarse){.tbtn kbd{display:none}}
+/* desktop: the siege map is landscape, so it takes the room and the dock stays narrow */
+html.deskgame .app{grid-template-columns:minmax(0,1040px) minmax(340px,420px)}

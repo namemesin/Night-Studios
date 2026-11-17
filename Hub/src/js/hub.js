@@ -40,6 +40,8 @@
       meta: () => { const d = (readJSON('nightkeep-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'Six maps · Daily Siege']; } },
     { id: 'market', href: 'market/', cls: ' market', name: 'Night Market', desc: 'Run a stall at the night bazaar. Buy low, sell high, chase the rumors and make the rent before every dawn.',
       meta: () => { const d = (readJSON('nightmarket-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'Open Market · Daily Market']; } },
+    { id: 'rally', href: 'rally/', cls: ' rally', name: 'Night Rally', desc: 'Top-down drift racing. Slide through the corners for a boost, and race your own ghost and the daily best.',
+      meta: () => { const d = (readJSON('nightrally-save1') || {}).d || {}, b = (d.best || {}).free; return [b ? 'Your best ' + fmt(b) : 'Not played yet', 'Moonlight Circuit · Daily Stage']; } },
   ];
   function render() {
     const keep = document.activeElement && document.activeElement.id === 'uname' ? $('uname').value : null;
@@ -56,7 +58,7 @@
         <label for="upass">Password</label><input id="upass" type="password" maxlength="72" autocomplete="${reg ? 'new-password' : 'current-password'}" placeholder="${reg ? 'At least 6 characters' : 'Your password'}">
         <p class="err" role="alert">${esc(err)}</p><button class="go violet" type="submit" ${busy ? 'disabled' : ''}>${busy ? 'One sec…' : reg ? 'Create login' : 'Log in'}</button>
         <p class="sub">${reg ? "Posts your scores and keeps each game's progress on every device. There's no password reset, so pick one you'll remember." : 'You can also just play. Logging in later keeps what you earned on this device.'}</p></form>`; }
-    panel.innerHTML = `<h1 class="studio">Night Studios</h1><p>Games after dark. Pick one and play.</p><div class="games">${cards}<div class="game soon"><span class="tag">COMING SOON</span><h3>More on the way</h3><p>New games will show up here. Each one keeps its own progress, currency and leaderboards.</p></div></div>${login}${acct && Studio.admin ? `<button class="go alt" type="button" id="adminBtn">${Studio.owner ? 'Owner and admin panel' : 'Admin panel'}</button>` : ''}<p class="ver">Night Studios · version ${esc(APP_VERSION)}</p>`;
+    panel.innerHTML = `<h1 class="studio">Night Studios</h1><p>Games after dark. Pick one and play.</p><div class="games">${cards}<div class="game soon"><span class="tag">COMING SOON</span><h3>More on the way</h3><p>New games will show up here. Each one keeps its own progress, currency and leaderboards.</p></div></div>${login}${acct && Studio.admin ? `<button class="go alt" type="button" id="adminBtn">${Studio.owner ? 'Owner and admin panel' : 'Admin panel'}</button>` : ''}<div class="box lay">${Studio.layoutRow()}</div><p class="ver">Night Studios · version ${esc(APP_VERSION)}</p>`;
     if (keep !== null && $('uname')) { $('uname').value = keep; }
   }
   panel.addEventListener('click', async e => {

@@ -97,3 +97,15 @@ form{display:grid;gap:8px}label{font-size:12px;color:var(--dim)}.inline{display:
 .streak{display:flex;gap:5px;justify-content:space-between}.streak i{flex:1;text-align:center;padding:7px 0;border-radius:9px;background:var(--bg2);font:11px var(--display);font-style:normal;color:var(--dim)}.streak i.got{background:var(--mint);color:#06281b}.streak i.now{outline:2px solid var(--gold);color:var(--gold)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media (min-width:600px){.stage{border-radius:14px;margin-bottom:10px}}
+/* ---- desktop layout: shared/studio.js sets html.deskgame on a wide window. The playfield keeps its phone shape
+   and stands beside a dock that holds the menus, or how to play while a run is on. ---- */
+.dock{display:none}
+html.deskgame .app{max-width:none;display:grid;grid-template-columns:min(640px,calc((100vh - 84px)*.62)) minmax(380px,520px);grid-template-rows:auto minmax(0,1fr);justify-content:center;column-gap:18px;padding:0 18px}
+html.deskgame .top{grid-column:1/-1;padding:10px 2px}
+html.deskgame .top[hidden]{display:flex!important}
+html.deskgame .stage,html.deskgame .dock{min-width:0;min-height:0;margin-bottom:16px;border-radius:14px}
+html.deskgame .dock{display:block;position:relative;overflow:hidden;background:var(--bg2);border:1px solid var(--line)}
+html.deskgame .dock .overlay{background:none}
+html.deskgame .dock .side{display:none;position:absolute;inset:0;overflow-y:auto}
+html.deskgame .dock .overlay[hidden]+.side{display:block}
+html.deskgame .side .back{display:none}

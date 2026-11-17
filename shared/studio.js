@@ -23,6 +23,7 @@
     heist: { n: 'Night Heist', coin: 'coins', boards: ['free', 'daily'], bucket: 1, unit: m => nth(m, 'floor'), zones: seq('Floor'), causes: { guard: 'Caught by a guard', light: 'Caught in a searchlight' } },
     drive: { n: 'Night Drive', coin: 'coins', boards: ['free', 'daily', 'rush'], bucket: 500, unit: km, zones: ['Downtown', 'Neon Strip', 'Harbor Bridge', 'The Tunnel', 'Hill Pass', 'Skyline'], causes: { dawn: 'Ran out of night', time: 'Rush Hour timer' }, hits: { car: 'Car', van: 'Van', truck: 'Truck', oncoming: 'Oncoming car', lanechange: 'Lane changer' } },
     market: { n: 'Night Market', coin: 'coins', boards: ['free', 'daily'], bucket: 1, unit: m => nth(m, 'night'), zones: seq('Night'), causes: { rent: 'Could not pay the rent' } },
+    rally: { n: 'Night Rally', coin: 'coins', boards: ['free', 'daily'], bucket: 1, unit: m => nth(m, 'quarter lap'), zones: ['Lap 1', 'Lap 2', 'Lap 3', 'Finished'], causes: { finish: 'Finished all three laps', time: 'Ran out of time' } },
     keep: { n: 'Night Keep', coin: 'coins', boards: ['free', 'daily'], bucket: 2, unit: m => nth(m, 'wave'), zones: ['Moonlit Meadow', 'Dusk Canyon', 'Frozen Pass', 'Murky Swamp', 'Ember Peak', 'Crystal Cavern'], causes: { lives: 'Keep fell', won: 'Banked a won map', slime: 'Slime got in', bat: 'Bat got in', blob: 'Blob got in', knight: 'Knight got in', golem: 'Golem got in', swarm: 'Bug got in', shaman: 'Healer got in', imp: 'Imp got in', beetle: 'Beetle got in', ghost: 'Ghost got in', hexer: 'Hexer got in', boss: 'Demon got in', lich: 'Lich got in' } },
   };
 
@@ -195,6 +196,42 @@
   }
   function openAdmin(game) { if (!token()) return; A.on = true; A.game = GAMES[game] ? game : (GAMES[GAME] ? GAME : 'run'); A.msg = null; A.stats = null; panelEl(); draw(); refresh().then(load); }
 
-  window.Studio = { url: SERVER, key: KEY, game: GAME, games: GAMES, offline: OFFLINE, rpc, acct, setAcct, ready, refresh, runStart, eventMult, notesHTML, hidden, openAdmin, onChange: f => hooks.push(f),
+  /* ---------- desktop and mobile layouts ---------- */
+  // Every page has two layouts. Mobile is one phone-shaped column. Desktop fills the window: a game's playfield
+  // stands beside its menus instead of under them, and the home page becomes a grid. Desktop is used on a wide
+  // window unless the player picks a layout in Settings. The playfield itself is the same in both, so a score
+  // means the same thing on a phone and on a computer.
+  const LAYOUT = 'nightstudios-layout', LAYOUTS = { auto: 'Auto', desktop: 'Desktop', mobile: 'Mobile' };
+  let sideFn = null, sideEl = null, dockEl = null;
+  function layoutPref() { try { const v = localStorage.getItem(LAYOUT); return LAYOUTS[v] ? v : 'auto'; } catch (e) { return 'auto'; } }
+  const wantDesk = () => { const p = layoutPref(); return p === 'desktop' || (p === 'auto' && innerWidth >= 960 && innerHeight >= 480); };
+  // While a run is on, the menus are hidden, so their place beside the playfield shows how to play.
+  function drawSide() {
+    if (!sideEl || !dockEl.isConnected) return;
+    const ov = document.getElementById('overlay'); let html = '';
+    if (ov && ov.hidden) { try { html = sideFn ? sideFn() : ''; } catch (e) {} html = `<div class="panel">${html}<p class="sub">Your menus come back here when the run ends or you pause.</p></div>`; }
+    sideEl.innerHTML = html;
+  }
+  function applyLayout() {
+    const root = document.documentElement, stage = document.getElementById('stage'), ov = document.getElementById('overlay'), desk = wantDesk();
+    root.classList.toggle('deskgame', desk && !!stage); root.classList.toggle('deskhub', desk && !stage);
+    if (!stage || !ov) return;
+    if (desk && ov.parentNode === stage) {
+      if (!dockEl) { dockEl = document.createElement('div'); dockEl.className = 'dock'; sideEl = document.createElement('div'); sideEl.className = 'side'; dockEl.appendChild(sideEl); new MutationObserver(drawSide).observe(ov, { attributes: true, attributeFilter: ['hidden'] }); }
+      stage.after(dockEl); dockEl.insertBefore(ov, sideEl);
+    } else if (!desk && dockEl && ov.parentNode === dockEl) { stage.insertBefore(ov, document.getElementById('toasts')); dockEl.remove(); }
+    drawSide();
+  }
+  const layoutRow = () => `<div class="setrow"><span>Layout</span><button type="button" class="switch" data-layout aria-pressed="true">${LAYOUTS[layoutPref()]}</button></div><p class="sub">Auto uses the desktop layout on a wide window and the mobile one on a phone.</p>`;
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-layout]'); if (!b) return;
+    const order = Object.keys(LAYOUTS), next = order[(order.indexOf(layoutPref()) + 1) % order.length];
+    try { localStorage.setItem(LAYOUT, next); } catch (err) {}
+    b.textContent = LAYOUTS[next]; applyLayout(); dispatchEvent(new Event('resize'));
+  });
+  addEventListener('resize', applyLayout); // registered before any game's own resize, so a game always measures the new layout
+  applyLayout();
+
+  window.Studio = { layoutRow, set side(f) { sideFn = f; drawSide(); }, url: SERVER, key: KEY, game: GAME, games: GAMES, offline: OFFLINE, rpc, acct, setAcct, ready, refresh, runStart, eventMult, notesHTML, hidden, openAdmin, onChange: f => hooks.push(f),
     get admin() { return me.admin || me.owner; }, get owner() { return me.owner; } };
 })();

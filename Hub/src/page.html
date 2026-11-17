@@ -47,7 +47,19 @@ a.game:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
 .game.market{background:linear-gradient(135deg,#3a1420,#160a14);border-color:#8a3a4a}
 .game.market::after{background:radial-gradient(circle at 85% 0,rgba(255,138,92,.3),transparent 55%),radial-gradient(circle at 55% 10%,rgba(255,210,74,.16),transparent 50%)}
 .game.market .tag{color:#ff8a5c}
+.game.rally{background:linear-gradient(135deg,#1c3016,#0a120c);border-color:#4f7a2a}
+.game.rally::after{background:radial-gradient(circle at 85% 0,rgba(198,255,74,.24),transparent 55%),radial-gradient(circle at 55% 10%,rgba(127,232,255,.14),transparent 50%)}
+.game.rally .tag{color:#c6ff4a}
 .game .meta{color:var(--snow);opacity:.8}
+.lay{max-width:520px;width:100%;margin:0 auto}.lay .setrow{padding:0}
+/* desktop: a wide grid of games */
+html.deskhub .app{max-width:1180px}
+html.deskhub .panel{max-width:none;gap:16px;padding:24px 24px 48px}
+html.deskhub .studio{font-size:54px}
+html.deskhub .games{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+html.deskhub .game{padding:22px;align-content:start}
+html.deskhub .game h3{font-size:26px}.deskhub .game p{font-size:13px}
+html.deskhub #authForm,html.deskhub .panel>.box,html.deskhub .panel>.go{max-width:520px;width:100%;margin:0 auto}
 .who{display:flex;justify-content:space-between;align-items:center;gap:10px}
 </style>
 </head>

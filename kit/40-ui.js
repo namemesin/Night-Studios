@@ -117,7 +117,7 @@
     return `${backBtn(inRun ? 'pause' : 'home', inRun ? 'Back to pause menu' : 'Back')}<h2>Settings</h2>
       <div class="box"><h3>Sound</h3>${slider('volMusic', 'Music', st.music)}${slider('volSfx', 'Effects', st.sfx)}</div>
       <div class="box"><h3>Keyboard <button type="button" class="back" data-act="set:keys">Reset</button></h3>${keyRows}<p class="sub">Click a box, then press a key. <kbd>Esc</kbd> cancels.</p></div>
-      <div class="box"><h3>Game</h3>${sw('shake', 'Screen shake', st.shake)}${sw('haptics', 'Vibration', st.haptics)}${sw('fx', 'Effects quality', st.fx === 'full', 'Full', 'Low')}${sw('stats', 'Share run data', st.stats)}<p class="sub">Run data is how each run went and what ended it. It helps balance the game and never includes personal details.</p></div>
+      <div class="box"><h3>Game</h3>${sw('shake', 'Screen shake', st.shake)}${sw('haptics', 'Vibration', st.haptics)}${sw('fx', 'Effects quality', st.fx === 'full', 'Full', 'Low')}${sw('stats', 'Share run data', st.stats)}<p class="sub">Run data is how each run went and what ended it. It helps balance the game and never includes personal details.</p>${Studio.layoutRow()}</div>
       <p class="ver">Version ${esc(APP_VERSION)}</p>`;
   };
   ACTIONS.set = k => { const st = save.settings; if (k === 'fx') { st.fx = st.fx === 'low' ? 'full' : 'low'; resize(); } else if (k === 'keys') st.keys = JSON.parse(JSON.stringify(DEF_KEYS)); else st[k] = !st[k]; sfx.click(); persist(); render(); };
@@ -142,4 +142,5 @@
   dayHooks.push(() => { missionsDay = ''; if (!overlay.hidden && view === 'home') render(); });
   setInterval(() => { if (gstate === 'idle' || gstate === 'over') rollDay(); }, 60000);
   ACTIONS.studioadmin = () => Studio.openAdmin(GAME.id);
+  Studio.side = () => VIEWS.help ? VIEWS.help() : ''; // desktop layout: shown beside the playfield during a run
   Studio.onChange(() => { if (!overlay.hidden && view === 'home') render(); });

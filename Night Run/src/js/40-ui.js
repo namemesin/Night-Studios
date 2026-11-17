@@ -51,9 +51,10 @@
       <div class="box"><h3>Sound</h3>${slider('volMusic', 'Music', st.music)}${slider('volSfx', 'Effects', st.sfx)}</div>
       <div class="box"><h3>Touch</h3>${sw('steer', 'Steering', st.steer === 'drag', 'Drag', 'Sides')}<p class="sub">${st.steer === 'drag' ? 'Put a finger down anywhere and slide. Slide farther to turn harder.' : 'Hold the left or right half of the screen.'}</p>${sw('haptics', 'Vibration', st.haptics)}</div>
       <div class="box"><h3>Keyboard <button type="button" class="back" data-act="set:keys">Reset</button></h3>${keyRows}<p class="sub">Click a box, then press a key. <kbd>Esc</kbd> cancels.</p></div>
-      <div class="box"><h3>Game</h3>${sw('shake', 'Screen shake', st.shake)}${sw('ghost', 'Ghost of your best run', st.ghost)}${sw('fx', 'Effects quality', st.fx === 'full', 'Full', 'Low')}<p class="sub">Low draws fewer particles at a lower resolution. Try it if the game stutters.</p>${sw('stats', 'Share run data', st.stats)}<p class="sub">How far each run got and what ended it. It helps balance the game and never includes personal details.</p></div>
+      <div class="box"><h3>Game</h3>${sw('shake', 'Screen shake', st.shake)}${sw('ghost', 'Ghost of your best run', st.ghost)}${sw('fx', 'Effects quality', st.fx === 'full', 'Full', 'Low')}<p class="sub">Low draws fewer particles at a lower resolution. Try it if the game stutters.</p>${sw('stats', 'Share run data', st.stats)}<p class="sub">How far each run got and what ended it. It helps balance the game and never includes personal details.</p>${Studio.layoutRow()}</div>
       <p class="ver">Version ${esc(APP_VERSION)}</p>`;
   };
+  Studio.side = () => VIEWS['run-help'] ? VIEWS['run-help']() : ''; // desktop layout: shown beside the playfield during a run
   ACTIONS.set = k => { const st = save.settings; if (k === 'steer') st.steer = st.steer === 'drag' ? 'sides' : 'drag'; else if (k === 'fx') { st.fx = st.fx === 'low' ? 'full' : 'low'; resize(); } else if (k === 'keys') st.keys = JSON.parse(JSON.stringify(DEF_KEYS)); else st[k] = !st[k]; sfx.click(); persist(); render(); };
   ACTIONS.bind = s => { const [a, i] = s.split('.'); capturing = { a, i: +i }; render(); };
   panel.addEventListener('input', e => {
