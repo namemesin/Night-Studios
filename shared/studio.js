@@ -85,7 +85,7 @@
   function runStart(game, board, period) { const t = token(); if (OFFLINE || !t) return Promise.resolve(null); return rpc('ng_run_start', { p_token: t, p_game: game, p_board: board, p_period: period || '' }).then(r => (r && r.run) || null, () => null); }
 
   /* ---------- the Admin and Owner panel ---------- */
-  const A = { on: false, game: GAME || 'run', days: 7, stats: null, statsSt: 'idle', ov: null, own: null, flags: [], msg: null, busy: false, armed: '' };
+  const A = { on: false, game: GAME || 'run', days: 7, stats: null, statsSt: 'idle', ov: null, own: null, flags: [], rej: null, msg: null, busy: false, armed: '' };
   const stat = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
   const bar = (label, n, of, note) => `<div style="margin-top:7px"><div class="setrow" style="padding:0;font-size:12px"><span>${esc(label)}</span><span class="sub">${note}</span></div><div class="prog"><i style="width:${of ? Math.min(100, n / of * 100).toFixed(0) : 0}%"></i></div></div>`;
   const pct = (n, of) => of ? Math.round(n / of * 100) + '%' : '–';
@@ -94,10 +94,10 @@
     const t = token(), g = A.game; if (!t) return;
     A.statsSt = 'loading'; draw();
     const safe = p => p.catch(e => ({ failed: e }));
-    const [ov, st, fl, own] = await Promise.all([safe(rpc('ng_admin_overview', { p_token: t })), safe(rpc('ng_admin_stats', { p_token: t, p_game: g, p_days: A.days, p_bucket: GAMES[g].bucket })), safe(rpc('ng_admin_flags', { p_token: t, p_game: g })), me.owner ? safe(rpc('ng_owner_info', { p_token: t })) : null]);
+    const [ov, st, fl, own, rj] = await Promise.all([safe(rpc('ng_admin_overview', { p_token: t })), safe(rpc('ng_admin_stats', { p_token: t, p_game: g, p_days: A.days, p_bucket: GAMES[g].bucket })), safe(rpc('ng_admin_flags', { p_token: t, p_game: g })), me.owner ? safe(rpc('ng_owner_info', { p_token: t })) : null, safe(rpc('ng_admin_rejects', { p_token: t, p_game: g }))]);
     if (g !== A.game) return;
     if (ov && ov.failed) { A.msg = { t: /Not an admin|Not logged in/.test(ov.failed.message) ? "This account isn't an admin." : "Couldn't reach the server." }; A.statsSt = 'error'; return draw(); }
-    A.ov = ov; if (ov && ov.config) takeConfig(ov.config); A.stats = st && !st.failed ? st : null; A.statsSt = A.stats ? 'ready' : 'error'; A.flags = Array.isArray(fl) ? fl : []; A.own = own && !own.failed ? own : null; if (A.own && Array.isArray(A.own.hidden)) cfg.hidden = A.own.hidden.map(String);
+    A.ov = ov; if (ov && ov.config) takeConfig(ov.config); A.stats = st && !st.failed ? st : null; A.statsSt = A.stats ? 'ready' : 'error'; A.flags = Array.isArray(fl) ? fl : []; A.rej = rj && Array.isArray(rj.list) ? rj : null; A.own = own && !own.failed ? own : null; if (A.own && Array.isArray(A.own.hidden)) cfg.hidden = A.own.hidden.map(String);
     draw();
   }
   async function act(fn, args, ok) {
@@ -137,13 +137,25 @@
   }
   const armBtn = (key, label, sure) => `<button type="button" class="buy ghost" data-s="arm:${key}" ${A.busy ? 'disabled' : ''}>${A.armed === key ? sure || 'Tap again to confirm' : label}</button>`;
   const sel = (name, opts) => `<select name="${name}" style="padding:10px;border-radius:10px;background:var(--bg2);color:var(--snow);border:1px solid var(--line)">${opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>`;
+  // Why the fair-play check turned a score away, in words (see backend/night-studios-rejects.sql).
+  const WHY = { 'no ticket': 'Sent from an old page (no run ticket)', 'ticket not found': 'Run ticket not recognized', 'ticket already used': 'Run ticket already used', 'day ended': 'The daily course had ended',
+    distance: 'Too far for the time played', 'run length': 'Too short or too long for the mode', time: "The game's clock ran ahead of real time", score: 'Over the score limit', 'over 5,000,000': 'Over 5,000,000', replay: "The replay didn't check out" };
+  const why = r => WHY[r] || (/^ticket for /.test(r) ? 'Run ticket was for another board or day' : r);
+  const ago = t => { const m = Math.max(0, Math.round((Date.now() - Date.parse(t)) / 60000)); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 2880 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' days ago'; };
+  const secs = v => v == null ? '?' : (+v).toFixed(1).replace(/\.0$/, '');
+  function rejectsHTML(G0, dis) {
+    const R = A.rej; if (!R) return '';
+    if (!R.list.length) return `<p class="sub" style="margin-top:10px">No turned-away scores on ${G0.n} waiting for a look.</p>`;
+    return `<p class="sub" style="margin-top:10px"><b>Scores the fair-play check turned away</b> · ${fmt(R.waiting)} waiting. Post one if it was a real run; it goes on the board if it beats that player's best there.</p>${R.list.map(r => `<div class="item" style="padding:5px 0;align-items:flex-start"><span><b>${esc(r.name)}</b> ${fmt(r.score)} <span class="sub">· ${esc(r.board)}${r.period ? ' ' + esc(r.period) : ''} · ${esc(ago(r.at))}</span><br><span class="sub">${esc(why(r.reason))} · ${secs(r.secs)} s on the game clock${r.real != null ? `, ${secs(r.real)} s real` : ''}${r.limit != null ? ` · limit ${fmt(r.limit)}` : ''}</span></span><span style="white-space:nowrap"><button type="button" class="buy" data-s="post:${int(r.id)}" ${dis}>Post it</button> <button type="button" class="buy ghost" data-s="dismiss:${int(r.id)}" ${dis}>Dismiss</button></span></div>`).join('')}`;
+  }
   const HOURS = [[1, '1 hour'], [6, '6 hours'], [24, '1 day'], [72, '3 days'], [168, '1 week']];
   function draw() {
     if (!A.on) return;
     const body = panelEl().querySelector('#studioAdminBody'), G0 = GAMES[A.game], o = A.ov, dis = A.busy ? 'disabled' : '';
-    const keep = {}; body.querySelectorAll('input[name]').forEach(i => { if (i.value) keep[i.closest('form').dataset.f + '.' + i.name] = i.value; });
+    const keep = {}; body.querySelectorAll('input[name], select[name]').forEach(i => { const f = i.closest('form'); if (i.value && f) keep[f.dataset.f + '.' + i.name] = i.value; }); // a redraw keeps what was typed or picked
     const tabs = `<div class="tabs">${Object.keys(GAMES).map(g => `<button type="button" data-s="game:${g}" aria-pressed="${A.game === g}">${GAMES[g].n}${hidden(g) ? ' (hidden)' : ''}</button>`).join('')}</div>`;
-    const flags = A.flags.length ? `<p class="sub" style="margin-top:10px"><b>Scores the fair-play check thinks look too good</b></p>${A.flags.map(f => `<div class="item" style="padding:5px 0"><span><b>${esc(f.name)}</b> ${fmt(f.score)} <span class="sub">· ${esc(f.board)}${f.period ? ' ' + esc(f.period) : ''}</span></span><span><button type="button" class="buy ghost" data-s="unflag:${esc(f.name)}" ${dis}>It's fine</button> ${armBtn('rmscore:' + esc(f.name), 'Remove', 'Sure?')}</span></div>`).join('')}` : `<p class="sub" style="margin-top:10px">No suspicious scores on ${G0.n} right now.</p>`;
+    const flags = A.flags.length ? `<p class="sub" style="margin-top:10px"><b>Scores the fair-play check thinks look too good</b></p>${A.flags.map(f => `<div class="item" style="padding:5px 0"><span><b>${esc(f.name)}</b> ${fmt(f.score)} <span class="sub">· ${esc(f.board)}${f.period ? ' ' + esc(f.period) : ''}</span></span><span><button type="button" class="buy ghost" data-s="unflag:${esc(f.name)}" ${dis}>It's fine</button> ${armBtn('rmone:' + esc(f.name) + '|' + esc(f.board) + '|' + esc(f.period || ''), 'Remove', 'Sure?')}</span></div>`).join('')}` : `<p class="sub" style="margin-top:10px">No suspicious scores on ${G0.n} right now.</p>`;
+    const rejects = rejectsHTML(G0, dis);
     const msgOn = cfg.msg && cfg.msgEnds > Date.now(), evOn = cfg.ev && cfg.evEnds > Date.now();
     const owner = !me.owner ? '' : `<div class="box" style="border-color:var(--gold)"><h3>Owner <b>only you can do these</b></h3>
         <p class="sub"><b>Show or hide a game</b>. A hidden game disappears from the home page and nobody but you can open or post to it.</p>
@@ -155,7 +167,7 @@
     body.innerHTML = `<button class="back" type="button" data-s="close">← Back</button><h2>${me.owner ? 'Owner and admin' : 'Admin'}</h2>${A.msg ? `<p class="${A.msg.ok ? 'ok' : 'err'}" role="alert">${esc(A.msg.t)}</p>` : ''}${tabs}
       <div class="box"><h3>${G0.n} <b>commands for this game</b></h3>
         <form data-f="gift" novalidate><label>Give ${G0.coin} in ${G0.n}</label><div class="inline"><input name="user" type="text" maxlength="16" autocomplete="off" placeholder="Username, or * for everyone"><input name="amount" type="text" inputmode="numeric" maxlength="7" placeholder="Amount" style="width:104px"></div><button class="buy" type="submit" ${dis}>Send ${G0.coin}</button></form>
-        <form data-f="rmscore" novalidate style="margin-top:10px"><label>Remove a player's ${G0.n} scores</label><div class="inline"><input name="user" type="text" maxlength="16" autocomplete="off" placeholder="Username">${armBtn('rmscoreform', 'Remove', 'Tap again to remove')}</div></form>${flags}</div>
+        <form data-f="rmscore" novalidate style="margin-top:10px"><label>Remove a player's ${G0.n} scores</label><div class="inline"><input name="user" type="text" maxlength="16" autocomplete="off" placeholder="Username">${sel('board', [['', 'Every board']].concat(G0.boards.map(b => [b, b])))}${armBtn('rmscoreform', 'Remove', 'Tap again to remove')}</div></form>${flags}${rejects}</div>
       ${statsHTML()}
       <div class="box"><h3>All of Night Studios</h3>${o ? `<div class="stats">${stat('Players', fmt(o.players))}${stat('Active 24 h', fmt(o.active))}${stat('New 24 h', fmt(o.new))}${stat('Scores', fmt(o.scores))}${stat('Banned', fmt(o.banned))}</div>` : ''}
         <form data-f="announce" novalidate style="margin-top:10px"><label>Announcement on every game <b>${msgOn ? leftText(cfg.msgEnds - Date.now()) + ' left' : 'off'}</b></label><input name="text" type="text" maxlength="200" placeholder="Shown on everyone's home screen"><div class="inline">${sel('hours', HOURS)}<span><button class="buy" type="submit" ${dis}>Post</button> <button class="buy ghost" type="button" data-s="annoff" ${dis}>Take down</button></span></div></form>
@@ -163,22 +175,23 @@
         <form data-f="ban" novalidate style="margin-top:10px"><label>Ban from every leaderboard</label><div class="inline"><input name="user" type="text" maxlength="16" autocomplete="off" placeholder="Username"><span><button class="buy" type="submit" ${dis}>Ban</button> <button class="buy ghost" type="button" data-s="unban" ${dis}>Unban</button></span></div></form></div>
       ${owner}
       ${o && o.recent ? `<div class="box"><h3>Recently active</h3><ol class="lb">${o.recent.map(p => `<li><span class="n">${int(p.level)}</span><span>${esc(p.name)}${p.admin ? ' <span class="ttl">admin</span>' : ''}${p.banned ? ' <span class="ttl" style="color:var(--rose)">banned</span>' : ''}</span><b>${p.best ? fmt(p.best) : '–'}</b></li>`).join('')}</ol></div>` : ''}`;
-    for (const k in keep) { const [f, n] = k.split('.'), i = body.querySelector(`form[data-f="${f}"] input[name="${n}"]`); if (i) i.value = keep[k]; }
+    for (const k in keep) { const [f, n] = k.split('.'), i = body.querySelector(`form[data-f="${f}"] [name="${n}"]`); if (i) i.value = keep[k]; }
   }
   const field = (f, n) => { const i = document.querySelector(`#studioAdmin form[data-f="${f}"] [name="${n}"]`); return i ? i.value.trim() : ''; };
   function onClick(e) {
     const b = e.target.closest('[data-s]'); if (!b || b.disabled) return;
     const s = b.dataset.s, i = s.indexOf(':'), k = i < 0 ? s : s.slice(0, i), v = i < 0 ? '' : s.slice(i + 1), g = A.game, G0 = GAMES[g];
     if (k === 'close') { A.on = false; panelEl().remove(); return; }
-    if (k === 'game') { if (GAMES[v]) { A.game = v; A.stats = null; A.flags = []; load(); } return; }
+    if (k === 'game') { if (GAMES[v]) { A.game = v; A.stats = null; A.flags = []; A.rej = null; load(); } return; }
     if (k === 'days') { A.days = +v || 7; A.stats = null; load(); return; }
     if (k === 'arm') { if (A.armed !== v) { A.armed = v; draw(); setTimeout(() => { if (A.armed === v) { A.armed = ''; draw(); } }, 4000); return; }
-      if (v === 'rmscoreform') { const u = field('rmscore', 'user'); if (u) act('ng_admin_remove_score', { p_username: u, p_game: g }, r => `Removed ${r.removed} of ${r.username}'s ${G0.n} scores.`); }
-      else if (v.startsWith('rmscore:')) act('ng_admin_remove_score', { p_username: v.slice(8), p_game: g }, r => `Removed ${r.username}'s ${G0.n} scores.`);
+      if (v === 'rmscoreform') { const u = field('rmscore', 'user'), bd = field('rmscore', 'board'); if (u) act('ng_admin_remove_score', { p_username: u, p_game: g, p_board: bd || null }, r => `Removed ${r.removed} of ${r.username}'s ${G0.n} scores${bd ? ' on ' + bd : ''}.`); }
+      else if (v.startsWith('rmone:')) { const [u, bd, per] = v.slice(6).split('|'); act('ng_admin_remove_score', { p_username: u, p_game: g, p_board: bd, p_period: per || '' }, r => `Took ${r.username}'s ${bd} score off the ${G0.n} board.`); }
       else if (v === 'resetboard') act('ng_owner_reset_board', { p_game: g, p_board: field('reset', 'board') || null }, r => `Wiped ${r.removed} scores from ${G0.n}.`);
       else if (v === 'delplayer') { const u = field('delplayer', 'user'); if (u) act('ng_owner_delete_player', { p_username: u }, r => `Deleted ${r.username}.`); }
       else if (v === 'clearruns') act('ng_owner_clear_runs', { p_game: g }, r => `Cleared ${r.removed} run records for ${G0.n}.`);
       return; }
+    if (k === 'post' || k === 'dismiss') return act('ng_admin_review', { p_id: +v, p_post: k === 'post' }, r => k === 'dismiss' ? `Dismissed ${r.username}'s ${fmt(r.score)}.` : r.best ? `Posted ${r.username}'s ${fmt(r.score)} to the board.` : `Marked ${r.username}'s ${fmt(r.score)} as real; their best there (${fmt(r.old)}) is higher, so the board is unchanged.`);
     if (k === 'unflag') return act('ng_admin_unflag', { p_username: v, p_game: g }, 'Cleared.');
     if (k === 'hide') return act('ng_owner_hide', { p_game: v, p_hidden: !hidden(v) }, hidden(v) ? `${GAMES[v].n} is live again.` : `${GAMES[v].n} is hidden.`);
     if (k === 'unadmin') { const u = field('adminset', 'user'); if (u) act('ng_owner_set_admin', { p_username: u, p_admin: false }, r => `${r.username} is no longer an admin.`); return; }
