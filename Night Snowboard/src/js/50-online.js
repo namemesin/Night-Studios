@@ -157,12 +157,13 @@
       ${save.acct ? '' : `<p class="sub" style="margin-top:8px">Log in from your profile to post your scores.</p>`}</div>`;
   }
   // A run ticket: asked for when a run starts, sent with its score. The server only accepts a score for a run it saw start.
-  let runTok = null;
-  function armRun(mode) { runTok = save.acct && accountsOn() ? Studio.runStart('run', mode, mode === 'daily' ? dayKey : '') : null; }
+  // The day a daily run started is the day it posts to, even if midnight passes before it ends (its ticket is for that day).
+  let runTok = null, runDay = '';
+  function armRun(mode) { runDay = mode === 'daily' ? dayKey : ''; runTok = save.acct && accountsOn() ? Studio.runStart('run', mode, runDay) : null; }
   function submitScore(r) {
     if (!accountsOn()) return;
     if (!save.acct) { r.post = 'Create a free account from your profile to post scores to the leaderboards.'; return; }
-    const tab = r.mode, period = tab === 'daily' ? dayKey : '';
+    const tab = r.mode, period = tab === 'daily' ? runDay || dayKey : '';
     r.post = 'Posting your score…';
     const tok = save.acct.token;
     Promise.resolve(runTok).then(run => rpc('ng_submit', { p_token: tok, p_game: 'run', p_board: tab, p_period: period, p_score: r.s, p_meta: { dist: r.d, zone: r.z, secs: r.secs, v: APP_VERSION }, p_run: run }))

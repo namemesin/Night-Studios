@@ -82,7 +82,8 @@ begin
   if p_game = 'run' then
     if p_board not in ('free', 'daily', 'park') or (p_board = 'daily') <> (p_period <> '') then raise exception 'Invalid board'; end if;
     if p_board = 'park' then v_bad := v_secs < 70 or v_secs > 240; v_limit := 600000;
-    else v_bad := v_dist > 400000 or v_dist > 130 * v_secs + 50; v_limit := 700 * v_dist + 30000; end if;
+    -- the distance counts from the top of the mountain, so a Head Start run begins 750 m down with its clock at 0
+    else v_bad := v_dist > 400000 or v_dist > 130 * v_secs + 800; v_limit := 700 * v_dist + 30000; end if;
   elsif p_game = 'drive' then
     if p_board not in ('free', 'daily', 'rush') or (p_board = 'daily') <> (p_period <> '') then raise exception 'Invalid board'; end if;
     if p_board = 'rush' then v_bad := v_secs < 20 or v_secs > 120 or v_dist > 140 * v_secs + 100; v_limit := 400000;

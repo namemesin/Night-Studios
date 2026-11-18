@@ -124,14 +124,15 @@
     return `<div class="box"><h3>${title} <b>${b.count > b.top.length ? `Top ${b.top.length} of ${fmt(b.count)}` : b.count === 1 ? '1 driver' : fmt(b.count) + ' drivers'}</b></h3>${rows ? `<ol class="lb">${rows}</ol>${mine}` : `<p>Nobody has posted here yet. Be the first.</p>`}${save.acct ? '' : `<p class="sub" style="margin-top:8px">Log in from your profile to post your scores.</p>`}</div>`;
   }
   // A run ticket: asked for when a run starts, sent with its score. The server only accepts a score for a run it saw start.
-  let runTok = null;
-  function armRun(mode) { runTok = save.acct && accountsOn() ? Studio.runStart(GAME, mode, mode === 'daily' ? dayKey : '') : null; }
+  // The day a daily run started is the day it posts to, even if midnight passes before it ends (its ticket is for that day).
+  let runTok = null, runDay = '';
+  function armRun(mode) { runDay = mode === 'daily' ? dayKey : ''; runTok = save.acct && accountsOn() ? Studio.runStart(GAME, mode, runDay) : null; }
   function submitScore(r) {
     if (!accountsOn()) return;
     if (!save.acct) { r.post = 'Log in with Night Studios from your profile to post scores.'; return; }
     const tab = r.mode; r.post = 'Posting your score…';
     const tok = save.acct.token;
-    Promise.resolve(runTok).then(run => rpc('ng_submit', { p_token: tok, p_game: GAME, p_board: tab, p_period: tab === 'daily' ? dayKey : '', p_score: r.s, p_meta: { dist: r.d, zone: r.z, secs: r.secs, v: APP_VERSION } , p_run: run }))
+    Promise.resolve(runTok).then(run => rpc('ng_submit', { p_token: tok, p_game: GAME, p_board: tab, p_period: tab === 'daily' ? runDay || dayKey : '', p_score: r.s, p_meta: { dist: r.d, zone: r.z, secs: r.secs, v: APP_VERSION } , p_run: run }))
       .then(res => { r.post = res && res.error ? esc(res.error) : res && res.rank ? `${res.best ? 'New personal best on the board' : 'Your best still stands'}: <b>#${res.rank}</b> of ${fmt(res.count)} on ${tab === 'daily' ? "today's route" : tab === 'rush' ? 'Rush Hour' : 'Night Drive'}.` : ''; const b = boards[boardKey(tab)]; if (b) b.at = 0; boardLoad(tab, true); })
       .catch(e => { if (loggedOut(e)) return signedOut("You were logged out, so that drive wasn't posted."); r.post = "Couldn't reach the leaderboard, so this drive wasn't posted."; })
       .finally(() => { if (lastRun === r && view === 'over' && !overlay.hidden) render(); });

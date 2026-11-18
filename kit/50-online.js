@@ -124,14 +124,15 @@
   }
   // A game can post through its own server function (GAME.submitFn) and send more with the score (GAME.submitMore).
   // A run ticket: asked for when a run starts, sent with its score. The server only accepts a score for a run it saw start.
-  let runTok = null;
-  function armRun(mode) { runTok = save.acct && accountsOn() ? Studio.runStart(GAME.id, mode, (GAME.modes.find(m => m.id === mode) || {}).daily ? dayKey : '') : null; }
+  // The day a daily run started is the day it posts to, even if midnight passes before it ends (its ticket is for that day).
+  let runTok = null, runDay = '';
+  function armRun(mode) { runDay = (GAME.modes.find(m => m.id === mode) || {}).daily ? dayKey : ''; runTok = save.acct && accountsOn() ? Studio.runStart(GAME.id, mode, runDay) : null; }
   function submitScore(r) {
     if (!accountsOn()) return;
     if (!save.acct) { r.post = 'Log in with Night Studios from your profile to post scores.'; return; }
     const tab = r.mode; r.post = 'Posting your score…';
     const tok = save.acct.token;
-    Promise.resolve(runTok).then(run => rpc(GAME.submitFn || 'ng_submit', Object.assign({ p_token: tok, p_game: GAME.id, p_board: tab, p_period: (GAME.modes.find(m => m.id === tab) || {}).daily ? dayKey : '', p_score: r.s, p_meta: Object.assign({ secs: r.secs, v: APP_VERSION }, r.meta || {}) , p_run: run }, GAME.submitMore ? GAME.submitMore(r) : null)))
+    Promise.resolve(runTok).then(run => rpc(GAME.submitFn || 'ng_submit', Object.assign({ p_token: tok, p_game: GAME.id, p_board: tab, p_period: (GAME.modes.find(m => m.id === tab) || {}).daily ? runDay || dayKey : '', p_score: r.s, p_meta: Object.assign({ secs: r.secs, v: APP_VERSION }, r.meta || {}) , p_run: run }, GAME.submitMore ? GAME.submitMore(r) : null)))
       .then(res => { r.post = res && res.error ? esc(res.error) : res && res.rank ? `${res.best ? 'New personal best on the board' : 'Your best still stands'}: <b>#${res.rank}</b> of ${fmt(res.count)} on ${esc((GAME.modes.find(m => m.id === tab) || GAME.modes[0]).name)}.` : ''; const b = boards[boardKey(tab)]; if (b) b.at = 0; boardLoad(tab, true); })
       .catch(e => { if (loggedOut(e)) return signedOut("You were logged out, so that run wasn't posted."); r.post = "Couldn't reach the leaderboard, so this run wasn't posted."; })
       .finally(() => { if (lastRun === r && view === 'over' && !overlay.hidden) render(); });

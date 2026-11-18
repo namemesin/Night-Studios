@@ -16,7 +16,7 @@
   }
   function uploadGhost(mode, s, rec) {
     if (!save.acct || !accountsOn() || (mode !== 'free' && mode !== 'daily') || rec.length > 120000) return;
-    rpc('ng_save_ghost', { p_token: save.acct.token, p_game: 'run', p_kind: mode, p_period: mode === 'daily' ? dayKey : '', p_score: s, p_data: packGhost(rec) }).catch(() => {});
+    rpc('ng_save_ghost', { p_token: save.acct.token, p_game: 'run', p_kind: mode, p_period: mode === 'daily' ? runDay || dayKey : '', p_score: s, p_data: packGhost(rec) }).catch(() => {});
   }
 
   const fr = { list: [], incoming: [], outgoing: [], st: 'idle', msg: null, busy: false, at: 0 };
