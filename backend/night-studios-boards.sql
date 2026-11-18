@@ -13,7 +13,7 @@ create table if not exists ng_boards (
 alter table ng_boards enable row level security;
 revoke all on ng_boards from anon, authenticated;
 insert into ng_boards (game, board, daily, rate, base, max_score) values
-  ('watch', 'free', false, 600, 5000, 5000000), ('watch', 'daily', true, 600, 5000, 5000000),
+  ('watch', 'free', false, 2500, 5000, 5000000), ('watch', 'daily', true, 2500, 5000, 5000000), -- Night Watch scores grow with time squared, so it needs more room
   ('heist', 'free', false, 1500, 3000, 5000000), ('heist', 'daily', true, 1500, 3000, 5000000)
 on conflict (game, board) do update set daily = excluded.daily, rate = excluded.rate, base = excluded.base, max_score = excluded.max_score;
 
