@@ -142,5 +142,6 @@
   dayHooks.push(() => { missionsDay = ''; if (!overlay.hidden && view === 'home') render(); });
   setInterval(() => { if (gstate === 'idle' || gstate === 'over') rollDay(); }, 60000);
   ACTIONS.studioadmin = () => Studio.openAdmin(GAME.id);
+  Studio.watchUpdates(APP_VERSION, () => gstate === 'idle' ? 'menu' : gstate === 'over' ? 'results' : 'round'); // loads a newer version by itself, never mid-round
   Studio.side = () => VIEWS.help ? VIEWS.help() : ''; // desktop layout: shown beside the playfield during a run
   Studio.onChange(() => { if (!overlay.hidden && view === 'home') render(); });

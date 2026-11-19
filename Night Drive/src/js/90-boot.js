@@ -10,4 +10,5 @@
   show('home');
   lastFrame = performance.now(); requestAnimationFrame(frame);
   if (typeof onlineBoot === 'function') onlineBoot();
+  Studio.watchUpdates(APP_VERSION, () => gstate === 'idle' ? 'menu' : gstate === 'over' ? 'results' : 'round'); // loads a newer version by itself, never mid-round
   if (DEV) window.ND = { get G() { return G; }, get save() { return save; }, get state() { return gstate; }, startRun, step, show, keys, earn, persist, fireNitro, autopilot, laneX };

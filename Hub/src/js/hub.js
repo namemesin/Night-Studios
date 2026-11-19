@@ -124,5 +124,7 @@
   addEventListener('studio-friends', () => loadFriends(true)); // added or removed someone from a profile card
   addEventListener('pageshow', () => { acct = studioAcct(); render(); });
   render(); Studio.onChange(render);
+  // a newer version loads by itself, unless someone is typing (logging in, adding a friend)
+  Studio.watchUpdates(APP_VERSION, () => document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) ? 'round' : 'menu');
   fetch('versions.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).then(v => { if (v && typeof v === 'object') { versions = v; render(); } }).catch(() => {});
   if (sbReady && acct) rpc('ng_me', { p_token: acct.token }).then(me => { if (me && me.error) { setStudioAcct(null); acct = null; err = 'Your login expired. Log in again.'; render(); } }).catch(ex => { if (ex.status === 404) { serverUp = false; render(); } });

@@ -84,6 +84,52 @@
   // server knows how long ago it was issued. Resolves to null for guests or when the server can't be reached.
   function runStart(game, board, period) { const t = token(); if (OFFLINE || !t) return Promise.resolve(null); return rpc('ng_run_start', { p_token: t, p_game: game, p_board: board, p_period: period || '' }).then(r => (r && r.run) || null, () => null); }
 
+  /* ---------- staying on the newest version ---------- */
+  // Every page checks versions.json (written by each publish) once a minute and whenever it comes back into view.
+  // When its app has a newer version it loads it by itself: right away on a menu, after the results have been up
+  // for a few seconds, and never in the middle of a round (it waits for the round to end). A page tells us where
+  // the player is with Studio.watchUpdates(APP_VERSION, () => 'menu' | 'results' | 'round').
+  const SELF_URL = (document.currentScript && document.currentScript.src) || location.href;
+  const UPD = { ver: '', where: null, want: '', timer: 0, safeSince: 0, bar: null, shown: '' };
+  (() => { // a page we opened to update itself carries ?v=...; take it back out of the address
+    try { const u = new URL(location.href); if (u.searchParams.has('v')) { u.searchParams.delete('v'); history.replaceState(history.state, '', u.pathname + (u.search === '?' ? '' : u.search) + u.hash); } } catch (e) {}
+  })();
+  function updBar(text) {
+    if (!text) { if (UPD.bar) { UPD.bar.remove(); UPD.bar = null; UPD.shown = ''; } return; }
+    if (UPD.shown === text) return;
+    if (!UPD.bar) { UPD.bar = document.createElement('div'); UPD.bar.setAttribute('role', 'status'); UPD.bar.style.cssText = 'position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:95;max-width:calc(100% - 32px);padding:7px 14px;border-radius:99px;background:var(--card,#16203a);border:1px solid var(--line,#2a3658);color:var(--snow,#e8eef7);font:12px/1.35 var(--mono,monospace);text-align:center;box-shadow:0 4px 18px rgba(0,0,0,.4);pointer-events:none'; document.body.appendChild(UPD.bar); }
+    UPD.bar.textContent = text; UPD.shown = text;
+  }
+  function updGo() {
+    const key = 'nightstudios-upd-' + (GAME || 'hub');
+    try { const t = JSON.parse(sessionStorage.getItem(key) || 'null'); if (t && t.v === UPD.want && Date.now() - t.at < 300000) { UPD.want = ''; UPD.safeSince = 0; updBar(''); return; } sessionStorage.setItem(key, JSON.stringify({ v: UPD.want, at: Date.now() })); } catch (e) {} // tried this one in the last 5 minutes: the new files are still on their way, try later
+    updBar('Loading the new version…');
+    setTimeout(() => { try { const u = new URL(location.href); u.searchParams.set('v', UPD.want); location.replace(u.toString()); } catch (e) { location.reload(); } }, 1200);
+  }
+  function updTick() {
+    if (!UPD.want) return;
+    const where = A.on ? 'round' : (() => { try { return UPD.where ? UPD.where() : 'menu'; } catch (e) { return 'menu'; } })(); // the Admin panel counts as busy
+    if (where === 'round') { UPD.safeSince = 0; return updBar('A new version is out. It loads when this round ends.'); }
+    if (!UPD.safeSince) UPD.safeSince = Date.now();
+    if (where === 'results' && Date.now() - UPD.safeSince < 8000) return updBar('A new version is out. It loads in a moment.');
+    clearInterval(UPD.timer); UPD.timer = 0; updGo();
+  }
+  async function updCheck() {
+    if (!UPD.ver || UPD.want || OFFLINE || document.hidden) return;
+    try {
+      const r = await fetch(new URL('versions.json', SELF_URL).href + '?t=' + Date.now(), { cache: 'no-store' });
+      const v = r.ok ? await r.json() : null, now = v && v[GAME || 'hub'];
+      if (typeof now === 'string' && now && now !== 'dev' && now !== UPD.ver) { UPD.want = now; updTick(); if (UPD.want && !UPD.timer) UPD.timer = setInterval(updTick, 1000); }
+    } catch (e) {}
+  }
+  function watchUpdates(version, where) {
+    UPD.ver = String(version || ''); UPD.where = typeof where === 'function' ? where : null;
+    if (!UPD.ver || UPD.ver.startsWith('dev')) return; // local development never updates itself
+    updCheck(); setInterval(updCheck, 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) updCheck(); });
+    addEventListener('online', updCheck);
+  }
+
   /* ---------- the daily day ---------- */
   // Every daily course changes at midnight Denver time, for everyone (the games use the same rule). Players are
   // only ever shown when that is on their own clock: midnight in Colorado, 2:00 AM in Florida, 11:00 PM in California.
@@ -430,6 +476,6 @@
   addEventListener('resize', applyLayout); // registered before any game's own resize, so a game always measures the new layout
   applyLayout();
 
-  window.Studio = { layoutRow, set side(f) { sideFn = f; drawSide(); }, url: SERVER, key: KEY, game: GAME, games: GAMES, offline: OFFLINE, rpc, acct, setAcct, ready, refresh, runStart, eventMult, notesHTML, hidden, openAdmin, showProfile, profileName, set flair(f) { flairFn = f; }, dayKey: denDay, resetTime, nextReset, onChange: f => hooks.push(f),
+  window.Studio = { layoutRow, set side(f) { sideFn = f; drawSide(); }, url: SERVER, key: KEY, game: GAME, games: GAMES, offline: OFFLINE, rpc, acct, setAcct, ready, refresh, runStart, eventMult, notesHTML, hidden, openAdmin, showProfile, profileName, set flair(f) { flairFn = f; }, dayKey: denDay, resetTime, nextReset, watchUpdates, onChange: f => hooks.push(f),
     get admin() { return me.admin || me.owner; }, get owner() { return me.owner; } };
 })();

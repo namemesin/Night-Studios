@@ -10,4 +10,5 @@
   show(location.hash === '#run' || location.hash === '#daily' ? 'run-home' : 'hub');
   lastFrame = performance.now(); requestAnimationFrame(frame);
   if (typeof onlineBoot === 'function') onlineBoot();
+  Studio.watchUpdates(APP_VERSION, () => gstate === 'idle' ? 'menu' : gstate === 'over' ? 'results' : 'round'); // loads a newer version by itself, never mid-round
   if (DEV) window.NG = { get G() { return G; }, get save() { return save; }, get state() { return gstate; }, startRun, step, show, keys, earn, persist, addXP, fireFlare, finishRun, spawnRow, newGame, lineAt };
