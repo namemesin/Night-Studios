@@ -84,6 +84,16 @@
   // server knows how long ago it was issued. Resolves to null for guests or when the server can't be reached.
   function runStart(game, board, period) { const t = token(); if (OFFLINE || !t) return Promise.resolve(null); return rpc('ng_run_start', { p_token: t, p_game: game, p_board: board, p_period: period || '' }).then(r => (r && r.run) || null, () => null); }
 
+  /* ---------- the daily day ---------- */
+  // Every daily course changes at midnight Denver time, for everyone (the games use the same rule). Players are
+  // only ever shown when that is on their own clock: midnight in Colorado, 2:00 AM in Florida, 11:00 PM in California.
+  const DAILY_TZ = 'America/Denver';
+  function denParts(when) { const p = {}; new Intl.DateTimeFormat('en-US', { timeZone: DAILY_TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23' }).formatToParts(when).forEach(x => { p[x.type] = x.value; }); return p; }
+  function denDay(when = new Date()) { try { const p = denParts(when); return `${p.year}-${p.month}-${p.day}`; } catch (e) { return new Date(when.getTime() - 7 * 3600000).toISOString().slice(0, 10); } }
+  function nextReset(now = new Date()) { const p = denParts(now), h = +p.hour % 24; return new Date(now.getTime() + ((24 - h) * 3600 - +p.minute * 60 - +p.second) * 1000 - now.getMilliseconds()); }
+  // 'midnight' or '2:00 AM': when the next daily starts, on this player's clock
+  function resetTime() { try { const d = nextReset(); return d.getHours() === 0 && d.getMinutes() === 0 ? 'midnight' : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); } catch (e) { return 'midnight'; } }
+
   /* ---------- the Admin and Owner panel ---------- */
   // One game at a time (picked at the top), split into sections so nothing is a long scroll:
   //   Review   scores the fair-play check turned away or flagged, with a count on the tab
@@ -105,7 +115,7 @@
   const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const shiftDay = (k, n) => { const d = new Date(k + 'T12:00:00'); d.setDate(d.getDate() + n); return dayKey(d); };
   const isDaily = (g, b) => b === 'daily';
-  A.day = dayKey(new Date());
+  A.day = denDay();
   const waiting = g => { const q = A.queue[g]; return q ? int(q.rejects) + int(q.flags) : 0; };
   const attr = s => esc(s); // values go in data- attributes, escaped
   function panelEl() {
@@ -127,7 +137,7 @@
     const call = (fn, args) => safe(rpc(fn, Object.assign({ p_token: t }, args)));
     const jobs = [call('ng_admin_queue', {})];
     if (sec === 'review') jobs.push(call('ng_admin_rejects', { p_game: g }), call('ng_admin_flags', { p_game: g }));
-    else if (sec === 'boards') { if (!GAMES[g].boards.includes(A.bd)) A.bd = GAMES[g].boards[0]; if (!A.day) A.day = dayKey(new Date()); jobs.push(call('ng_admin_board', { p_game: g, p_board: A.bd, p_period: isDaily(g, A.bd) ? A.day : '' })); }
+    else if (sec === 'boards') { if (!GAMES[g].boards.includes(A.bd)) A.bd = GAMES[g].boards[0]; if (!A.day) A.day = denDay(); jobs.push(call('ng_admin_board', { p_game: g, p_board: A.bd, p_period: isDaily(g, A.bd) ? A.day : '' })); }
     else if (sec === 'players') jobs.push(call('ng_admin_find', { p_query: A.q }));
     else if (sec === 'studio') jobs.push(call('ng_admin_overview', {}));
     else if (sec === 'data') { A.statsSt = 'loading'; draw(); jobs.push(call('ng_admin_stats', { p_game: g, p_days: A.days, p_bucket: GAMES[g].bucket })); }
@@ -183,7 +193,7 @@
     return elsewhere + (rej || fl ? rej + fl : `<div class="box"><p>Nothing to review on ${G0.n}.</p></div>`);
   }
   function boardsHTML() {
-    const g = A.game, G0 = GAMES[g], B = A.board, daily = isDaily(g, A.bd), today = dayKey(new Date());
+    const g = A.game, G0 = GAMES[g], B = A.board, daily = isDaily(g, A.bd), today = denDay();
     const tabs = `<div class="tabs">${G0.boards.map(b => `<button type="button" data-s="bd" data-b="${b}" aria-pressed="${A.bd === b}">${esc(b)}</button>`).join('')}</div>`;
     const day = daily ? `<div class="setrow"><button type="button" class="buy ghost" data-s="day" data-d="-1">‹ Earlier</button><b style="white-space:nowrap">${A.day === today ? 'Today' : esc(A.day)}</b><button type="button" class="buy ghost" data-s="day" data-d="1" ${A.day >= today ? 'disabled' : ''}>Later ›</button></div>` : '';
     let list = '<p>Loading…</p>';
@@ -329,8 +339,10 @@
   // joined and were last on, and their best on every board in every game with its rank. Public information only;
   // the server (ng_profile) gives banned players no profile. Night Snowboard adds "Add friend" and its name colors.
   const BOARD_N = { free: 'Best', daily: 'Daily', park: 'Trick Park', rush: 'Rush Hour' };
-  let flairFn = null, profEl = null, profName = '';
-  const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  let flairFn = null, profEl = null, profName = '', profArmed = '';
+  const pArm = (k, label) => `<button type="button" class="buy ghost" data-pact="${k}">${profArmed === k ? 'Tap again' : label}</button>`;
+  const friendsChanged = () => { try { dispatchEvent(new Event('studio-friends')); } catch (e) {} };
+  const today = () => denDay();
   const dayWord = k => { const t = today(), d = new Date(t + 'T12:00:00'); d.setDate(d.getDate() - 1); const y = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; return k === t ? 'today' : k === y ? 'yesterday' : esc(k); };
   const lastOn = d => d == null ? '' : d <= 0 ? 'last on today' : d === 1 ? 'last on yesterday' : d < 60 ? `last on ${d} days ago` : 'last on a while ago';
   (() => { const st = document.createElement('style'); st.textContent = '.pname{background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;cursor:pointer;text-align:left}.pname:hover b,.pname:focus-visible b{text-decoration:underline}'; document.head.appendChild(st); })();
@@ -341,11 +353,14 @@
     const name = flairFn ? flairFn(p.name, p.color, p.title) : `<b>${esc(p.name)}</b>`;
     const games = order.filter(g => byGame[g]).map(g => `<div class="box"><h3>${esc(GAMES[g].n)}</h3>${byGame[g].sort((a, b) => GAMES[g].boards.indexOf(a.board) - GAMES[g].boards.indexOf(b.board) || (a.period < b.period ? 1 : -1)).map(s =>
       `<div class="setrow" style="padding:5px 0"><span>${esc(BOARD_N[s.board] || s.board)}${s.period ? ` <span class="sub">${dayWord(s.period)}</span>` : ''}</span><span><b>${fmt(s.score)}</b> <span class="sub">#${int(s.rank)} of ${fmt(s.of)}</span></span></div>`).join('')}</div>`).join('');
-    const rel = p.friend, friendBtn = GAME === 'run' && rel && rel !== 'me' ? (rel === 'friends' ? '<p class="sub">You\'re friends.</p>' : rel === 'asked' ? '<p class="sub">Friend request sent.</p>' : `<button type="button" class="buy" data-pact="friend">${rel === 'asked you' ? 'Accept friend request' : 'Add friend'}</button>`) : '';
+    const rel = p.friend;
+    const friendBtn = !rel || rel === 'me' ? '' : rel === 'friends' ? `<span class="sub">You're friends.</span> ${pArm('unfriend', 'Remove friend')}`
+      : rel === 'asked' ? `<span class="sub">Friend request sent.</span> ${pArm('unfriend', 'Cancel request')}`
+      : `<button type="button" class="buy" data-pact="friend">${rel === 'asked you' ? 'Accept friend request' : 'Add friend'}</button>${rel === 'asked you' ? ' ' + pArm('unfriend', 'Decline') : ''}`;
     const adminBtn = (me.admin || me.owner) && rel !== 'me' ? `<button type="button" class="buy ghost" data-pact="admin">Open in the Admin panel</button>` : '';
     return `<div class="box"><div class="item"><span style="font-size:18px">${name}</span><button type="button" class="back" data-pact="close" aria-label="Close">✕</button></div>
       <p class="sub" style="margin-top:6px">Level ${int(p.level)} · joined ${esc(new Date(p.joined).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }))} · ${lastOn(p.days)}${rel === 'me' ? ' · this is you' : ''}</p>
-      ${friendBtn || adminBtn ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${friendBtn}${adminBtn}</div><p class="sub" data-pmsg style="margin-top:6px"></p>` : ''}</div>
+      ${friendBtn || adminBtn ? `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px">${friendBtn}${adminBtn}</div>` : ''}<p class="sub" data-pmsg style="margin-top:6px"></p></div>
       ${games || '<div class="box"><p>No scores on the boards yet.</p></div>'}`;
   }
   async function showProfile(name) {
@@ -361,8 +376,12 @@
       const a = b.dataset.pact, nm = profName;
       if (a === 'close') return closeProfile();
       if (a === 'admin') { closeProfile(); openAdmin(GAME); A.sec = 'players'; A.q = nm; A.open = nm; A.found = null; return; }
-      if (a === 'friend') { b.disabled = true; const m = profEl.querySelector('[data-pmsg]');
-        try { const r = await rpc('ng_friend_request', { p_token: token(), p_username: nm }); if (m) m.textContent = r && r.error ? r.error : r && r.friends ? `You and ${r.name} are friends now.` : 'Friend request sent.'; }
+      if (a === 'friend' || a === 'unfriend') {
+        if (a === 'unfriend' && profArmed !== a) { profArmed = a; const lab = b.textContent; b.textContent = 'Tap again'; setTimeout(() => { if (profArmed === a) { profArmed = ''; if (b.isConnected) b.textContent = lab; } }, 4000); return; } // ending a friendship takes two taps
+        profArmed = ''; b.disabled = true; const m = profEl.querySelector('[data-pmsg]');
+        try { const r = await rpc(a === 'friend' ? 'ng_friend_request' : 'ng_friend_remove', { p_token: token(), p_username: nm });
+          if (r && r.error) { if (m) m.textContent = r.error; b.disabled = false; return; }
+          friendsChanged(); return showProfile(nm); }
         catch (err) { if (m) m.textContent = "That didn't go through. Try again."; b.disabled = false; } }
     });
     let p;
@@ -411,6 +430,6 @@
   addEventListener('resize', applyLayout); // registered before any game's own resize, so a game always measures the new layout
   applyLayout();
 
-  window.Studio = { layoutRow, set side(f) { sideFn = f; drawSide(); }, url: SERVER, key: KEY, game: GAME, games: GAMES, offline: OFFLINE, rpc, acct, setAcct, ready, refresh, runStart, eventMult, notesHTML, hidden, openAdmin, showProfile, profileName, set flair(f) { flairFn = f; }, onChange: f => hooks.push(f),
+  window.Studio = { layoutRow, set side(f) { sideFn = f; drawSide(); }, url: SERVER, key: KEY, game: GAME, games: GAMES, offline: OFFLINE, rpc, acct, setAcct, ready, refresh, runStart, eventMult, notesHTML, hidden, openAdmin, showProfile, profileName, set flair(f) { flairFn = f; }, dayKey: denDay, resetTime, nextReset, onChange: f => hooks.push(f),
     get admin() { return me.admin || me.owner; }, get owner() { return me.owner; } };
 })();

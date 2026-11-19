@@ -78,7 +78,7 @@
   const achRow = (a, un, p) => `<div class="ach${un ? '' : ' locked'}"><span class="medal" style="${un ? `background:${TIERS[a.tier].c}` : `border-color:${TIERS[a.tier].c}`}">${un ? '★' : ''}</span><div><h4>${esc(a.n)}</h4><p>${esc(a.t)}</p>${!un && p >= 0 ? progBar(p) : ''}</div><span class="rw">${un ? 'Done' : TIERS[a.tier].n + '<br>+' + TIERS[a.tier].r}</span></div>`;
   VIEWS['run-home'] = () => {
     const mode = R.mode, kit = BOOSTS.map(b => `<button type="button" class="buy ${R.kit[b.id] ? 'on' : 'ghost'}" data-act="boost:${b.id}" ${!R.kit[b.id] && coins() < b.cost ? 'disabled' : ''} title="${esc(b.d)}">${b.short}<br><small>${R.kit[b.id] ? 'Ready' : fmt(b.cost)}</small></button>`).join('');
-    const btn = m => `<button class="go${mode === m ? '' : ' alt'}" type="button" data-act="play:${m}">${MODES[m][0]}<small>${m === 'daily' ? dayLabel + ' · ' : ''}${m === 'free' ? 'Best ' + fmt(R.best) : m === 'park' ? 'Best ' + fmt(R.bestPark) : MODES[m][1]}</small></button>`;
+    const btn = m => `<button class="go${mode === m ? '' : ' alt'}" type="button" data-act="play:${m}">${MODES[m][0]}<small>${m === 'free' ? 'Best ' + fmt(R.best) : m === 'park' ? 'Best ' + fmt(R.bestPark) : MODES[m][1] + ' · new one at ' + Studio.resetTime()}</small></button>`;
     const lv = level();
     return `<a class="back" href="../">← Night Studios</a><div class="hero"><img src="${cosPreview('skin', cosItem('skin', R.eq.skin))}" alt="" width="72" height="72"><div style="flex:1"><div>${nameHTML(playerName(), save.flair.color, save.flair.title)}</div>
         <p class="sub">Rider level ${lv}${lv < MAX_LEVEL ? ` · ${fmt(save.xp - XP_AT[lv])} / ${fmt(XP_AT[lv + 1] - XP_AT[lv])} XP` : ' · max level'}</p>${progBar(levelFrac(), 'gold')}</div></div>
@@ -120,7 +120,7 @@
   ACTIONS.share = () => {
     const r = lastRun; if (!r) return;
     const url = TOP_LEVEL ? location.origin + location.pathname : '';
-    const text = r.mode === 'daily' ? `I scored ${fmt(r.s)} on today's Night Snowboard course. Same mountain for everyone. Beat it before midnight.` : r.mode === 'park' ? `${fmt(r.s)} in 75 seconds of Night Snowboard's Trick Park. Your turn.` : `I just scored ${fmt(r.s)} on Night Snowboard. Bet you can't make it past ${ZONES[Math.min(r.z + 1, ZONES.length - 1)].name}.`;
+    const text = r.mode === 'daily' ? `I scored ${fmt(r.s)} on today's Night Snowboard course. Same mountain for everyone. Beat it today.` : r.mode === 'park' ? `${fmt(r.s)} in 75 seconds of Night Snowboard's Trick Park. Your turn.` : `I just scored ${fmt(r.s)} on Night Snowboard. Bet you can't make it past ${ZONES[Math.min(r.z + 1, ZONES.length - 1)].name}.`;
     const full = url ? text + ' ' + url : text, box = $('shareMsg');
     const fallback = () => { if (box) box.innerHTML = `<p class="sub">Copy this and send it:</p><input type="text" readonly value="${esc(full)}">`; };
     if (navigator.share && COARSE && TOP_LEVEL) navigator.share(url ? { text, url } : { text }).catch(e => { if (!e || e.name !== 'AbortError') fallback(); });
@@ -174,6 +174,6 @@
       <p>${COARSE ? 'Hold <b>Grab</b>' : `Hold <kbd>${esc(keyFor('grab'))}</kbd>`} in the air for a grab bonus, but let go before you land. Land dead straight for a <b>Perfect</b> (+50%). Landing an odd spin leaves you riding <b>switch</b>, which pays +20% on the next trick.</p></div>
     <div class="box"><h3>Lanterns and Flares</h3><p>Three lanterns charge a <b>Flare</b>${COARSE ? '' : ` (<kbd>${esc(keyFor('flare'))}</kbd>)`}: a few seconds of smashing through everything at full speed while flakes fly to you.</p></div>
     <div class="box"><h3>The mountain</h3><p>${ZONES.map(z => `<b style="color:${z.color}">${z.name}</b> ${fmt(z.at)} m`).join(' · ')}</p><p>The Backcountry is dark: lanterns light the way. The Summit has crevasses to jump. Ice patches make you slide.</p></div>
-    <div class="box"><h3>Modes</h3><p><b>Free Ride</b> is endless and random. The <b>Daily Course</b> is the same for everyone and changes at midnight Mountain time; boosts are off there. <b>Trick Park</b> is 75 seconds of kickers and rails with nothing to hit.</p></div>`;
+    <div class="box"><h3>Modes</h3><p><b>Free Ride</b> is endless and random. The <b>Daily Course</b> is the same for everyone and changes every day at ${Studio.resetTime()}; boosts are off there. <b>Trick Park</b> is 75 seconds of kickers and rails with nothing to hit.</p></div>`;
   ACTIONS.studioadmin = () => Studio.openAdmin('run');
   Studio.onChange(() => { if (!overlay.hidden && view === 'run-home') render(); });

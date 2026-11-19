@@ -20,7 +20,7 @@
   const HERO_KIND = Object.keys(COS)[0];
   VIEWS.hub = VIEWS.home = () => {
     const lv = level(), hero = cosItem(HERO_KIND, D.eq[HERO_KIND]);
-    const btn = (m, i) => `<button class="go${D.mode === m.id ? '' : ' alt'}" type="button" data-act="play:${m.id}">${m.name}<small>${m.daily ? dayLabel + ' · ' + m.sub : D.best[m.id] ? 'Best ' + fmt(D.best[m.id]) : m.sub}</small></button>`;
+    const btn = (m, i) => `<button class="go${D.mode === m.id ? '' : ' alt'}" type="button" data-act="play:${m.id}">${m.name}<small>${m.daily ? m.sub + ' · new one at ' + Studio.resetTime() : D.best[m.id] ? 'Best ' + fmt(D.best[m.id]) : m.sub}</small></button>`;
     const [first, ...rest] = GAME.modes;
     return `<a class="back" href="../">← Night Studios</a><div class="hero"><img src="${cosPreview(HERO_KIND, hero)}" alt="" width="72" height="72"><div style="flex:1"><div><b>${esc(playerName())}</b> <span class="ttl">${esc(hero.n)}</span></div>
         <p class="sub">Level ${lv}${lv < MAX_LEVEL ? ` · ${fmt(save.xp - XP_AT[lv])} / ${fmt(XP_AT[lv + 1] - XP_AT[lv])} XP` : ' · max'}</p>${progBar(levelFrac(), 'gold')}</div></div>

@@ -16,7 +16,7 @@
   }
   VIEWS.hub = VIEWS.home = () => {
     const mode = D.mode, lv = level();
-    const btn = m => `<button class="go${mode === m ? '' : ' alt'}" type="button" data-act="play:${m}">${MODES[m][0]}<small>${m === 'daily' ? dayLabel + ' · ' + MODES[m][1] : m === 'free' ? 'Best ' + fmt(D.best) : 'Best ' + fmt(D.bestRush)}</small></button>`;
+    const btn = m => `<button class="go${mode === m ? '' : ' alt'}" type="button" data-act="play:${m}">${MODES[m][0]}<small>${m === 'daily' ? MODES[m][1] + ' · new one at ' + Studio.resetTime() : m === 'free' ? 'Best ' + fmt(D.best) : 'Best ' + fmt(D.bestRush)}</small></button>`;
     return `<a class="back" href="../">← Night Studios</a><div class="hero"><img src="${cosPreview('car', cosItem('car', D.eq.car))}" alt="" width="72" height="72"><div style="flex:1"><div><b>${esc(playerName())}</b> <span class="ttl">${esc(cosItem('car', D.eq.car).n)}</span></div>
         <p class="sub">Driver level ${lv}${lv < MAX_LEVEL ? ` · ${fmt(save.xp - XP_AT[lv])} / ${fmt(XP_AT[lv + 1] - XP_AT[lv])} XP` : ' · max'}</p>${progBar(levelFrac(), 'gold')}</div></div>
       ${typeof onlineNotes === 'function' ? onlineNotes() : ''}
@@ -52,7 +52,7 @@
   ACTIONS.share = () => {
     const r = lastRun; if (!r) return;
     const url = TOP_LEVEL ? location.origin + location.pathname : '';
-    const text = r.mode === 'daily' ? `I scored ${fmt(r.s)} on today's Night Drive route. Same traffic for everyone. Beat it before midnight.` : r.mode === 'rush' ? `${fmt(r.s)} in 90 seconds of Night Drive rush hour. Your turn.` : `I made it ${(r.d / 1000).toFixed(1)} km before dawn in Night Drive and scored ${fmt(r.s)}. Catch me.`;
+    const text = r.mode === 'daily' ? `I scored ${fmt(r.s)} on today's Night Drive route. Same traffic for everyone. Beat it today.` : r.mode === 'rush' ? `${fmt(r.s)} in 90 seconds of Night Drive rush hour. Your turn.` : `I made it ${(r.d / 1000).toFixed(1)} km before dawn in Night Drive and scored ${fmt(r.s)}. Catch me.`;
     const full = url ? text + ' ' + url : text, box = $('shareMsg'), fallback = () => { if (box) box.innerHTML = `<p class="sub">Copy this and send it:</p><input type="text" readonly value="${esc(full)}">`; };
     if (navigator.share && COARSE && TOP_LEVEL) navigator.share(url ? { text, url } : { text }).catch(e => { if (!e || e.name !== 'AbortError') fallback(); });
     else try { navigator.clipboard.writeText(full).then(() => toastUI('Copied. Paste it to a friend.'), fallback); } catch (e) { fallback(); }
@@ -100,7 +100,7 @@
     <div class="box"><h3>Multiplier</h3><p>Pass cars with a hair's width to spare for a <b>near miss</b>. Each one builds your combo, and every combo step adds 10% to everything you score, up to x5. Skimming <b>oncoming</b> traffic is worth triple.</p></div>
     <div class="box"><h3>Nitro</h3><p>Tuck in close behind a car to <b>draft</b>: your nitro tank fills while you sit there. Near misses and nitro cans fill it too. ${COARSE ? 'Tap <b>Nitro</b>' : `Press <kbd>${esc(keyFor('nitro'))}</kbd>`} to burn one charge: a lot more speed, and everything scores double while it lasts.</p></div>
     <div class="box"><h3>The route</h3><p>${ZONES.map(z => `<b style="color:${z.color}">${z.name}</b> ${(z.at / 1000).toFixed(1)} km`).join(' · ')}</p><p>From the Harbor Bridge on, cars change lanes: watch for the blinker. The Tunnel is lit only by headlights. In the hills the two left lanes carry oncoming traffic.</p></div>
-    <div class="box"><h3>Modes</h3><p><b>Night Drive</b> is endless and different every time. The <b>Daily Route</b> has the same traffic for everyone and changes at midnight Mountain time. <b>Rush Hour</b> is 90 seconds of dense traffic with no checkpoints: pure score.</p></div>`;
+    <div class="box"><h3>Modes</h3><p><b>Night Drive</b> is endless and different every time. The <b>Daily Route</b> has the same traffic for everyone and changes every day at ${Studio.resetTime()}. <b>Rush Hour</b> is 90 seconds of dense traffic with no checkpoints: pure score.</p></div>`;
 
   VIEWS.profile = () => {
     const L = D.life, hrs = L.secs >= 3600 ? (L.secs / 3600).toFixed(1) + ' h' : Math.round(L.secs / 60) + ' min';
