@@ -119,7 +119,7 @@
     if (!b || b.st === 'loading') { if (!b) boardLoad(tab); return `<div class="box"><p>Loading the board…</p></div>`; }
     if (b.st === 'error') return `<div class="box"><p>Couldn't load the board. <button class="back" type="button" data-act="board:${tab}">Try again</button></p></div>`;
     const meId = save.acct && save.acct.id, title = tab === 'daily' ? `Daily route · ${dayLabel}` : tab === 'rush' ? 'Rush Hour' : 'Night Drive';
-    const rows = b.top.map((r, i) => `<li class="${r.id === meId ? 'me' : ''}"><span class="n">${i + 1}</span><span><b>${esc(String(r.name || 'Driver').slice(0, 16))}</b>${r.meta && r.meta.dist && tab !== 'rush' ? ` <span class="sub">· ${(int(r.meta.dist) / 1000).toFixed(2)} km</span>` : ''}</span><b>${fmt(r.score)}</b></li>`).join('');
+    const rows = b.top.map((r, i) => `<li class="${r.id === meId ? 'me' : ''}"><span class="n">${i + 1}</span><span>${r.name ? Studio.profileName(String(r.name).slice(0, 16)) : '<b>Driver</b>'}${r.meta && r.meta.dist && tab !== 'rush' ? ` <span class="sub">· ${(int(r.meta.dist) / 1000).toFixed(2)} km</span>` : ''}</span><b>${fmt(r.score)}</b></li>`).join('');
     const mine = b.me && b.me.rank > b.top.length ? `<ol class="lb" style="margin-top:6px"><li class="me"><span class="n">${b.me.rank}</span><span><b>${esc(playerName())}</b></span><b>${fmt(b.me.score)}</b></li></ol>` : '';
     return `<div class="box"><h3>${title} <b>${b.count > b.top.length ? `Top ${b.top.length} of ${fmt(b.count)}` : b.count === 1 ? '1 driver' : fmt(b.count) + ' drivers'}</b></h3>${rows ? `<ol class="lb">${rows}</ol>${mine}` : `<p>Nobody has posted here yet. Be the first.</p>`}${save.acct ? '' : `<p class="sub" style="margin-top:8px">Log in from your profile to post your scores.</p>`}</div>`;
   }

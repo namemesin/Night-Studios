@@ -151,13 +151,14 @@
     if (!b || b.st === 'loading') { if (!b) boardLoad(tab); return `<div class="box"><p>Loading the board…</p></div>`; }
     if (b.st === 'error') return `<div class="box"><p>Couldn't load the board. <button class="back" type="button" data-act="board:${tab}">Try again</button></p></div>`;
     const meId = save.acct && save.acct.id, title = tab === 'daily' ? `Daily course · ${dayLabel}` : tab === 'park' ? 'Trick Park' : 'Free Ride';
-    const rows = b.top.map((r, i) => `<li class="${r.id === meId ? 'me' : ''}"><span class="n">${i + 1}</span><span>${r.level ? `<span class="ttl" style="margin:0 6px 0 0">${int(r.level)}</span>` : ''}${nameHTML(String(r.name || 'Rider').slice(0, 16), r.color, r.title)}${r.meta && r.meta.dist && tab !== 'park' ? ` <span class="sub">· ${fmt(r.meta.dist)} m</span>` : ''}</span><b>${fmt(r.score)}</b></li>`).join('');
+    const rows = b.top.map((r, i) => `<li class="${r.id === meId ? 'me' : ''}"><span class="n">${i + 1}</span><span>${r.level ? `<span class="ttl" style="margin:0 6px 0 0">${int(r.level)}</span>` : ''}${r.name ? Studio.profileName(String(r.name).slice(0, 16), nameHTML(String(r.name).slice(0, 16), r.color, r.title)) : nameHTML('Rider', r.color, r.title)}${r.meta && r.meta.dist && tab !== 'park' ? ` <span class="sub">· ${fmt(r.meta.dist)} m</span>` : ''}</span><b>${fmt(r.score)}</b></li>`).join('');
     const mine = b.me && b.me.rank > b.top.length ? `<ol class="lb" style="margin-top:6px"><li class="me"><span class="n">${b.me.rank}</span><span>${nameHTML(playerName(), save.flair.color, save.flair.title)}</span><b>${fmt(b.me.score)}</b></li></ol>` : '';
     return `<div class="box"><h3>${title} <b>${b.count > b.top.length ? `Top ${b.top.length} of ${fmt(b.count)}` : b.count === 1 ? '1 rider' : fmt(b.count) + ' riders'}</b></h3>${rows ? `<ol class="lb">${rows}</ol>${mine}` : `<p>Nobody has posted here yet. Be the first.</p>`}
       ${save.acct ? '' : `<p class="sub" style="margin-top:8px">Log in from your profile to post your scores.</p>`}</div>`;
   }
   // A run ticket: asked for when a run starts, sent with its score. The server only accepts a score for a run it saw start.
   // The day a daily run started is the day it posts to, even if midnight passes before it ends (its ticket is for that day).
+  Studio.flair = nameHTML; // profiles show a rider's name color and title the way the boards do
   let runTok = null, runDay = '';
   function armRun(mode) { runDay = mode === 'daily' ? dayKey : ''; runTok = save.acct && accountsOn() ? Studio.runStart('run', mode, runDay) : null; }
   function submitScore(r) {

@@ -118,7 +118,7 @@
     if (!b || b.st === 'loading') { if (!b) boardLoad(tab); return `<div class="box"><p>Loading the board…</p></div>`; }
     if (b.st === 'error') return `<div class="box"><p>Couldn't load the board. <button class="back" type="button" data-act="board:${tab}">Try again</button></p></div>`;
     const meId = save.acct && save.acct.id, bm = GAME.modes.find(m => m.id === tab) || GAME.modes[0], title = bm.name + (bm.daily ? ' · ' + dayLabel : '');
-    const rows = b.top.map((r, i) => `<li class="${r.id === meId ? 'me' : ''}"><span class="n">${i + 1}</span><span><b>${esc(String(r.name || 'Player').slice(0, 16))}</b>${GAME.boardNote ? GAME.boardNote(r, tab) : ''}</span><b>${fmt(r.score)}</b></li>`).join('');
+    const rows = b.top.map((r, i) => `<li class="${r.id === meId ? 'me' : ''}"><span class="n">${i + 1}</span><span>${r.name ? Studio.profileName(String(r.name).slice(0, 16)) : '<b>Player</b>'}${GAME.boardNote ? GAME.boardNote(r, tab) : ''}</span><b>${fmt(r.score)}</b></li>`).join('');
     const mine = b.me && b.me.rank > b.top.length ? `<ol class="lb" style="margin-top:6px"><li class="me"><span class="n">${b.me.rank}</span><span><b>${esc(playerName())}</b></span><b>${fmt(b.me.score)}</b></li></ol>` : '';
     return `<div class="box"><h3>${title} <b>${b.count > b.top.length ? `Top ${b.top.length} of ${fmt(b.count)}` : b.count === 1 ? '1 player' : fmt(b.count) + ' players'}</b></h3>${rows ? `<ol class="lb">${rows}</ol>${mine}` : `<p>Nobody has posted here yet. Be the first.</p>`}${save.acct ? '' : `<p class="sub" style="margin-top:8px">Log in from your profile to post your scores.</p>`}</div>`;
   }

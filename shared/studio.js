@@ -324,6 +324,57 @@
   }
   function openAdmin(game) { if (!token()) return; A.on = true; A.game = GAMES[game] ? game : (GAMES[GAME] ? GAME : 'run'); A.msg = null; A.stats = null; A.rej = null; A.board = null; A.found = null; panelEl(); draw(); refresh().then(() => { if (A.sec === 'owner' && !me.owner) A.sec = 'review'; draw(); loadSec(); }); }
 
+  /* ---------- player profiles ---------- */
+  // Tap a name on any leaderboard (anything marked data-profile="Name") to see that player: level, flair, when they
+  // joined and were last on, and their best on every board in every game with its rank. Public information only;
+  // the server (ng_profile) gives banned players no profile. Night Snowboard adds "Add friend" and its name colors.
+  const BOARD_N = { free: 'Best', daily: 'Daily', park: 'Trick Park', rush: 'Rush Hour' };
+  let flairFn = null, profEl = null, profName = '';
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const dayWord = k => { const t = today(), d = new Date(t + 'T12:00:00'); d.setDate(d.getDate() - 1); const y = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; return k === t ? 'today' : k === y ? 'yesterday' : esc(k); };
+  const lastOn = d => d == null ? '' : d <= 0 ? 'last on today' : d === 1 ? 'last on yesterday' : d < 60 ? `last on ${d} days ago` : 'last on a while ago';
+  (() => { const st = document.createElement('style'); st.textContent = '.pname{background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;cursor:pointer;text-align:left}.pname:hover b,.pname:focus-visible b{text-decoration:underline}'; document.head.appendChild(st); })();
+  function closeProfile() { if (profEl) { profEl.remove(); profEl = null; profName = ''; } }
+  function profileHTML(p) {
+    const order = Object.keys(GAMES).sort((a, b) => (b === GAME) - (a === GAME)), byGame = {};
+    for (const s of p.bests || []) (byGame[s.game] = byGame[s.game] || []).push(s);
+    const name = flairFn ? flairFn(p.name, p.color, p.title) : `<b>${esc(p.name)}</b>`;
+    const games = order.filter(g => byGame[g]).map(g => `<div class="box"><h3>${esc(GAMES[g].n)}</h3>${byGame[g].sort((a, b) => GAMES[g].boards.indexOf(a.board) - GAMES[g].boards.indexOf(b.board) || (a.period < b.period ? 1 : -1)).map(s =>
+      `<div class="setrow" style="padding:5px 0"><span>${esc(BOARD_N[s.board] || s.board)}${s.period ? ` <span class="sub">${dayWord(s.period)}</span>` : ''}</span><span><b>${fmt(s.score)}</b> <span class="sub">#${int(s.rank)} of ${fmt(s.of)}</span></span></div>`).join('')}</div>`).join('');
+    const rel = p.friend, friendBtn = GAME === 'run' && rel && rel !== 'me' ? (rel === 'friends' ? '<p class="sub">You\'re friends.</p>' : rel === 'asked' ? '<p class="sub">Friend request sent.</p>' : `<button type="button" class="buy" data-pact="friend">${rel === 'asked you' ? 'Accept friend request' : 'Add friend'}</button>`) : '';
+    const adminBtn = (me.admin || me.owner) && rel !== 'me' ? `<button type="button" class="buy ghost" data-pact="admin">Open in the Admin panel</button>` : '';
+    return `<div class="box"><div class="item"><span style="font-size:18px">${name}</span><button type="button" class="back" data-pact="close" aria-label="Close">✕</button></div>
+      <p class="sub" style="margin-top:6px">Level ${int(p.level)} · joined ${esc(new Date(p.joined).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }))} · ${lastOn(p.days)}${rel === 'me' ? ' · this is you' : ''}</p>
+      ${friendBtn || adminBtn ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${friendBtn}${adminBtn}</div><p class="sub" data-pmsg style="margin-top:6px"></p>` : ''}</div>
+      ${games || '<div class="box"><p>No scores on the boards yet.</p></div>'}`;
+  }
+  async function showProfile(name) {
+    name = String(name || '').slice(0, 16); if (!name || OFFLINE) return;
+    closeProfile(); profName = name;
+    profEl = document.createElement('div'); profEl.id = 'studioProfile'; profEl.setAttribute('role', 'dialog'); profEl.setAttribute('aria-label', name + "'s profile");
+    profEl.style.cssText = 'position:fixed;inset:0;z-index:85;overflow-y:auto;background:rgba(4,8,18,.78);-webkit-overflow-scrolling:touch';
+    profEl.innerHTML = `<div class="panel" style="max-width:440px"><div class="box"><div class="item"><b>${esc(name)}</b><button type="button" class="back" data-pact="close" aria-label="Close">✕</button></div><p>Loading…</p></div></div>`;
+    document.body.appendChild(profEl);
+    profEl.addEventListener('click', async e => {
+      if (e.target === profEl || e.target.classList.contains('panel')) return closeProfile();
+      const b = e.target.closest('[data-pact]'); if (!b) return;
+      const a = b.dataset.pact, nm = profName;
+      if (a === 'close') return closeProfile();
+      if (a === 'admin') { closeProfile(); openAdmin(GAME); A.sec = 'players'; A.q = nm; A.open = nm; A.found = null; return; }
+      if (a === 'friend') { b.disabled = true; const m = profEl.querySelector('[data-pmsg]');
+        try { const r = await rpc('ng_friend_request', { p_token: token(), p_username: nm }); if (m) m.textContent = r && r.error ? r.error : r && r.friends ? `You and ${r.name} are friends now.` : 'Friend request sent.'; }
+        catch (err) { if (m) m.textContent = "That didn't go through. Try again."; b.disabled = false; } }
+    });
+    let p;
+    try { p = await rpc('ng_profile', { p_name: name, p_token: token() }); } catch (e) { p = { error: "Couldn't load this profile. Check your connection." }; }
+    if (!profEl || profName !== name) return;
+    profEl.querySelector('.panel').innerHTML = p && !p.error ? profileHTML(p) : `<div class="box"><div class="item"><b>${esc(name)}</b><button type="button" class="back" data-pact="close" aria-label="Close">✕</button></div><p>${esc((p && p.error) || 'Something went wrong.')}</p></div>`;
+  }
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-profile]'); if (!b) return; e.preventDefault(); e.stopPropagation(); showProfile(b.dataset.profile); }, true);
+  addEventListener('keydown', e => { if (e.key === 'Escape' && profEl) { e.stopPropagation(); e.preventDefault(); closeProfile(); } }, true); // Escape closes the card, not the game's menu behind it
+  // a leaderboard name that opens the profile: Studio.profileName('Sin', '<b>Sin</b>')
+  const profileName = (name, inner) => `<button type="button" class="pname" data-profile="${esc(name)}">${inner == null ? `<b>${esc(name)}</b>` : inner}</button>`;
+
   /* ---------- desktop and mobile layouts ---------- */
   // Every page has two layouts. Mobile is one phone-shaped column. Desktop fills the window: a game's playfield
   // stands beside its menus instead of under them, and the home page becomes a grid. Desktop is used on a wide
@@ -360,6 +411,6 @@
   addEventListener('resize', applyLayout); // registered before any game's own resize, so a game always measures the new layout
   applyLayout();
 
-  window.Studio = { layoutRow, set side(f) { sideFn = f; drawSide(); }, url: SERVER, key: KEY, game: GAME, games: GAMES, offline: OFFLINE, rpc, acct, setAcct, ready, refresh, runStart, eventMult, notesHTML, hidden, openAdmin, onChange: f => hooks.push(f),
+  window.Studio = { layoutRow, set side(f) { sideFn = f; drawSide(); }, url: SERVER, key: KEY, game: GAME, games: GAMES, offline: OFFLINE, rpc, acct, setAcct, ready, refresh, runStart, eventMult, notesHTML, hidden, openAdmin, showProfile, profileName, set flair(f) { flairFn = f; }, onChange: f => hooks.push(f),
     get admin() { return me.admin || me.owner; }, get owner() { return me.owner; } };
 })();
